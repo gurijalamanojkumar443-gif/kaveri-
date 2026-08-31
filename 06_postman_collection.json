@@ -1,0 +1,243 @@
+{
+  "info": {
+    "_postman_id": "kaveri-stays-api-v1",
+    "name": "Kaveri Stays API",
+    "description": "Complete Kaveri Stays hotel booking API — FastAPI + PostgreSQL. Covers all 19 endpoints with JWT authentication, role-based access, and constraint enforcement.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{access_token}}", "type": "string"}]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {"type": "text/javascript", "exec": [""]}
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Guest",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth","register"]},
+            "body": {"mode": "raw", "raw": "{\"name\": \"Test Guest\", \"email\": \"testguest@example.com\", \"password\": \"TestPass1!\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));", "pm.test('No password hash', () => { pm.expect(pm.response.text()).to.not.include('$2b$'); });"]}}]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"]},
+            "body": {"mode": "raw", "raw": "{\"email\": \"{{email}}\", \"password\": \"{{password}}\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "var d = pm.response.json(); pm.environment.set('access_token', d.access_token); pm.environment.set('refresh_token', d.refresh_token);", "pm.test('Has tokens', () => { pm.expect(d.access_token).to.be.a('string'); });"]}}]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth","refresh"]},
+            "body": {"mode": "raw", "raw": "{\"refresh_token\": \"{{refresh_token}}\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "var d = pm.response.json(); pm.environment.set('access_token', d.access_token); pm.environment.set('refresh_token', d.refresh_token);"]}}]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth","logout"]},
+            "body": {"mode": "raw", "raw": "{\"refresh_token\": \"{{refresh_token}}\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth","me"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Has role', () => pm.expect(pm.response.json().role).to.be.a('string'));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "item": [
+        {
+          "name": "List Properties",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/properties", "host": ["{{base_url}}"], "path": ["properties"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('3 properties', () => pm.expect(pm.response.json()).to.have.length(3));"]}}]
+        },
+        {
+          "name": "Get Property 1",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/properties/1", "host": ["{{base_url}}"], "path": ["properties","1"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Has room_types', () => pm.expect(pm.response.json().room_types).to.be.an('array'));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Room Availability",
+      "item": [
+        {
+          "name": "Check Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rooms/availability?property_id=1&check_in=2026-10-01&check_out=2026-10-05",
+              "host": ["{{base_url}}"],
+              "path": ["rooms","availability"],
+              "query": [
+                {"key": "property_id", "value": "1"},
+                {"key": "check_in", "value": "2026-10-01"},
+                {"key": "check_out", "value": "2026-10-05"}
+              ]
+            }
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "var d = pm.response.json(); if (d.length > 0) { pm.environment.set('available_room_id', d[0].room_id); } pm.test('Has rate', () => d.every(r => r.nightly_rate > 0));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "List Bookings",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/bookings?limit=10&offset=0", "host": ["{{base_url}}"], "path": ["bookings"], "query": [{"key":"limit","value":"10"},{"key":"offset","value":"0"}]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Paginated', () => { pm.expect(pm.response.json().total).to.be.a('number'); });"]}}]
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/bookings", "host": ["{{base_url}}"], "path": ["bookings"]},
+            "body": {"mode": "raw", "raw": "{\"room_id\": {{available_room_id}}, \"check_in\": \"2026-10-01\", \"check_out\": \"2026-10-05\", \"guest_count\": 2, \"payment_method\": \"card\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["var code = pm.response.code; pm.test('201 or 409', () => pm.expect([201,409]).to.include(code)); if (code === 201) { pm.environment.set('booking_id', pm.response.json().booking_id); }"]}}]
+        },
+        {
+          "name": "Get Booking",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "Check-In (Staff/Manager)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/check-in", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","check-in"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 400 or 403', () => pm.expect([200,400,403]).to.include(pm.response.code));"]}}]
+        },
+        {
+          "name": "Check-Out (Staff/Manager)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/check-out", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","check-out"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 400 or 403', () => pm.expect([200,400,403]).to.include(pm.response.code));"]}}]
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/cancel", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","cancel"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 400', () => pm.expect([200,400,403]).to.include(pm.response.code));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payments",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/payments", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","payments"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));"]}}]
+        },
+        {
+          "name": "Post Payment (with Idempotency-Key)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Idempotency-Key", "value": "{{$randomUUID}}"}],
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/payments", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","payments"]},
+            "body": {"mode": "raw", "raw": "{\"amount\": 1000.00, \"method\": \"card\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 or 400', () => pm.expect([201,400]).to.include(pm.response.code));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Submit Review",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{base_url}}/bookings/{{booking_id}}/review", "host": ["{{base_url}}"], "path": ["bookings","{{booking_id}}","review"]},
+            "body": {"mode": "raw", "raw": "{\"rating\": 5, \"comment\": \"Excellent stay!\"}"}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 or 400 or 409', () => pm.expect([201,400,403,404,409]).to.include(pm.response.code));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Occupancy Report",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/reports/occupancy?start_date=2025-01-01&end_date=2025-12-31", "host": ["{{base_url}}"], "path": ["reports","occupancy"], "query": [{"key":"start_date","value":"2025-01-01"},{"key":"end_date","value":"2025-12-31"}]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 403', () => pm.expect([200,403]).to.include(pm.response.code));"]}}]
+        },
+        {
+          "name": "Revenue Report",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/reports/revenue?start_date=2025-01-01&end_date=2025-12-31", "host": ["{{base_url}}"], "path": ["reports","revenue"], "query": [{"key":"start_date","value":"2025-01-01"},{"key":"end_date","value":"2025-12-31"}]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 or 403', () => pm.expect([200,403]).to.include(pm.response.code));"]}}]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kaveri Stays — Luxury Hotel Booking</title>
+  <meta name="description" content="Experience India's finest luxury retreats in Coorg, Ooty and Alleppey. Book your perfect stay at Kaveri Stays." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" id="main-navbar" role="navigation" aria-label="Main Navigation">
+    <div class="container navbar-inner">
+      <div class="logo" style="cursor:pointer;" id="logo-link">
+        <div class="logo-mark">K</div>
+        <span class="logo-text">Kaveri <span>Stays</span></span>
+      </div>
+      <ul class="nav-links" id="main-nav-links" role="menubar">
+        <li><span class="nav-link" data-nav="home" role="menuitem" tabindex="0">Home</span></li>
+        <li><span class="nav-link" id="nav-properties-link" role="menuitem" tabindex="0">Properties</span></li>
+        <li><span class="nav-link" data-nav="vacancies" role="menuitem" tabindex="0">Vacancies</span></li>
+        <li><span class="nav-link" data-nav="dashboard" role="menuitem" tabindex="0">My Bookings</span></li>
+        <li><span class="nav-link hidden" data-nav="admin" id="nav-admin-link" role="menuitem" tabindex="0">Admin ⚙</span></li>
+      </ul>
+      <div class="nav-actions">
+        <div id="nav-auth">
+          <button class="btn-nav-secondary" id="open-login-btn">Sign In</button>
+          <button class="btn btn-primary btn-sm" id="open-register-btn">Join Free</button>
+        </div>
+        <div id="nav-user" class="hidden" style="display:flex;align-items:center;gap:var(--space-3);">
+          <button class="user-avatar-btn" id="nav-user-btn" aria-label="User menu">
+            <div class="user-avatar-icon" id="nav-user-initials">KS</div>
+            <span id="nav-user-name">Guest</span>
+            <span style="font-size:0.7rem;opacity:0.6">▾</span>
+          </button>
+          <button class="btn-nav-secondary" id="nav-logout-btn">Sign Out</button>
+        </div>
+        <!-- Hamburger (mobile only) -->
+        <button class="hamburger" id="hamburger-btn" aria-label="Open menu" style="display:none;" aria-expanded="false">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN SPA MOUNT -->
+  <main id="main-content" role="main"></main>
+
+  <!-- FOOTER -->
+  <footer role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo" style="margin-bottom:var(--space-4);">
+            <div class="logo-mark">K</div>
+            <span class="logo-text">Kaveri <span>Stays</span></span>
+          </div>
+          <p class="footer-brand-desc">India's most treasured luxury escape — three iconic properties nestled in nature's most breathtaking sanctuaries. Where every stay becomes a story.</p>
+        </div>
+        <div>
+          <div class="footer-heading">Properties</div>
+          <div class="footer-links">
+            <span class="footer-link">Coorg Estate</span>
+            <span class="footer-link">Ooty Retreat</span>
+            <span class="footer-link">Alleppey Backwaters</span>
+          </div>
+        </div>
+        <div>
+          <div class="footer-heading">Experiences</div>
+          <div class="footer-links">
+            <span class="footer-link">Wildlife Safaris</span>
+            <span class="footer-link">Ayurvedic Spa</span>
+            <span class="footer-link">Tea Garden Tours</span>
+            <span class="footer-link">Backwater Cruises</span>
+          </div>
+        </div>
+        <div>
+          <div class="footer-heading">Support</div>
+          <div class="footer-links">
+            <span class="footer-link" data-nav="dashboard" style="cursor:pointer;">My Bookings</span>
+            <span class="footer-link">Cancellation Policy</span>
+            <span class="footer-link">Contact Us</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-bottom-text">© 2026 Kaveri Stays. All rights reserved.</div>
+        <div class="footer-bottom-text">Made with ✦ in India</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="auth-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="auth-modal-title">Welcome to Kaveri Stays</h2>
+        <button class="modal-close" id="auth-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab active" data-tab="login" role="tab">Sign In</button>
+          <button class="auth-tab" data-tab="register" role="tab">Create Account</button>
+        </div>
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address <span class="required">*</span></label>
+            <input type="email" class="form-input" id="login-email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password <span class="required">*</span></label>
+            <input type="password" class="form-input" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">Sign In</button>
+          <div class="divider-text" style="margin-top:var(--space-5);">New to Kaveri Stays?</div>
+          <button type="button" class="btn btn-secondary w-full" onclick="switchAuthTab('register')">Create an Account →</button>
+        </form>
+        <form id="register-form" class="hidden" novalidate>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="reg-name">Full Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="reg-name" placeholder="Priya Sharma" autocomplete="name" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="reg-phone">Phone</label>
+              <input type="tel" class="form-input" id="reg-phone" placeholder="+91 98765 43210" autocomplete="tel" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:var(--space-4)">
+            <label class="form-label" for="reg-email">Email Address <span class="required">*</span></label>
+            <input type="email" class="form-input" id="reg-email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="reg-password">Password <span class="required">*</span></label>
+              <input type="password" class="form-input" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="reg-city">City</label>
+              <input type="text" class="form-input" id="reg-city" placeholder="Bangalore" autocomplete="address-level2" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="register-btn" style="margin-top:var(--space-5)">Create Account</button>
+          <div class="divider-text" style="margin-top:var(--space-4);">Already have an account?</div>
+          <button type="button" class="btn btn-secondary w-full" onclick="switchAuthTab('login')">Sign In →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING MODAL -->
+  <div class="modal-overlay" id="booking-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+    <div class="modal" style="max-width:580px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="booking-modal-title">Confirm Your Booking</h2>
+        <button class="modal-close" id="booking-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="booking-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancel-booking-modal-btn">Cancel</button>
+        <button class="btn btn-primary btn-lg" id="confirm-booking-btn">✦ Confirm Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay" id="success-modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <h2 class="modal-title sr-only">Booking Confirmed</h2>
+        <button class="modal-close" id="success-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="success-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- BOOKING DETAIL MODAL -->
+  <div class="modal-overlay" id="detail-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="detail-modal-title">Booking Details</h2>
+        <button class="modal-close" id="detail-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="detail-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- REVIEW MODAL -->
+  <div class="modal-overlay" id="review-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="review-modal-title">Leave a Review ⭐</h2>
+        <button class="modal-close" id="review-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm text-muted" style="margin-bottom:var(--space-5);">Share your experience to help future guests discover the magic of Kaveri Stays.</p>
+        <div class="form-group">
+          <label class="form-label">Your Rating <span class="required">*</span></label>
+          <div class="star-rating" id="review-stars">
+            <span class="star-btn" onclick="setRating(1)">☆</span>
+            <span class="star-btn" onclick="setRating(2)">☆</span>
+            <span class="star-btn" onclick="setRating(3)">☆</span>
+            <span class="star-btn" onclick="setRating(4)">☆</span>
+            <span class="star-btn" onclick="setRating(5)">☆</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="review-comment">Comments (Optional)</label>
+          <textarea class="form-input" id="review-comment" rows="4" placeholder="Describe your stay — the views, the hospitality, the food…" style="resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancel-review-btn">Cancel</button>
+        <button class="btn btn-primary" id="submit-review-btn">Submit Review ⭐</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('logo-link').addEventListener('click', () => navigateTo('home'));
+      document.getElementById('nav-properties-link').addEventListener('click', () => {
+        navigateTo('home');
+        setTimeout(() => document.getElementById('properties-section')?.scrollIntoView({ behavior: 'smooth' }), 300);
+      });
+      // Note: [data-nav] listeners are already bound in app.js DOMContentLoaded — no duplicate needed
+    });
+  </script>
+</body>
+</html>
+

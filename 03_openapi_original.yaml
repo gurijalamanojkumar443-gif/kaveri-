@@ -1,0 +1,1179 @@
+openapi: 3.1.0
+info:
+  title: Kaveri Stays API
+  version: 1.0.0
+  description: >
+    Production-grade HTTP API for Kaveri Stays luxury boutique resort chain.
+    Enforces role-based permissions (guest, staff, manager, owner), transactional guarantees,
+    and PostgreSQL exclusion-backed booking boundaries.
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local Development Server
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new guest account
+      description: Creates a self-service guest account. Cannot assign staff/manager/owner roles.
+      operationId: register_account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login and obtain JWT access & refresh tokens
+      description: Authenticates user credentials with bcrypt/Argon2. Rate-limited to prevent brute-force attacks.
+      operationId: login_account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Rotates the refresh token. Invalidates old refresh token to prevent replay.
+      operationId: refresh_token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout and revoke refresh token
+      operationId: logout_account
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current authenticated user profile
+      operationId: get_current_user_profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /properties:
+    get:
+      tags:
+        - Properties
+      summary: List all Kaveri Stays properties
+      operationId: list_properties
+      responses:
+        '200':
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertyResponse'
+
+  /properties/{id}:
+    get:
+      tags:
+        - Properties
+      summary: Get property details
+      operationId: get_property_by_id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Property detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyDetailResponse'
+        '404':
+          description: Property not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /rooms/availability:
+    get:
+      tags:
+        - Rooms
+      summary: Check room availability for a date range
+      description: Returns rooms available between check_in and check_out. Respects check-in = check-out boundary.
+      operationId: check_room_availability
+      parameters:
+        - name: property_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: check_in
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2026-06-01"
+        - name: check_out
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2026-06-05"
+        - name: room_type_id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of available rooms with calculated nightly rates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailableRoomResponse'
+        '400':
+          description: Invalid date range (e.g. check_out <= check_in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Property or room type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings:
+    get:
+      tags:
+        - Bookings
+      summary: List bookings
+      description: Returns bookings scoped to the caller's role (guests see own, managers see property, owner sees all).
+      operationId: list_bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: property_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [confirmed, checked_in, checked_out, cancelled, no_show]
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: guest_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [check_in, check_out, booking_id, guest_count]
+            default: check_in
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated bookings list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookingsResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Bookings
+      summary: Create a new booking
+      description: Atomically creates booking and records initial payment inside a single database transaction.
+      operationId: create_booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetailResponse'
+        '400':
+          description: Invalid request parameters (e.g. check_out <= check_in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Room or guest not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Room already booked for the requested dates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Guest count exceeds maximum occupancy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}:
+    get:
+      tags:
+        - Bookings
+      summary: Get booking by ID
+      operationId: get_booking_by_id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetailResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (or 404 for other guest privacy)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}/check-in:
+    post:
+      tags:
+        - Bookings
+      summary: Check-in a guest
+      operationId: check_in_booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Guest successfully checked in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetailResponse'
+        '400':
+          description: Illegal state transition (booking is not confirmed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Guests cannot perform check-in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}/check-out:
+    post:
+      tags:
+        - Bookings
+      summary: Check-out a guest
+      operationId: check_out_booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Guest successfully checked out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetailResponse'
+        '400':
+          description: Illegal state transition (booking is not checked_in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Guests cannot perform check-out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancel a booking
+      operationId: cancel_booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Booking successfully cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetailResponse'
+        '400':
+          description: Illegal state transition (cannot cancel checked_in/checked_out stays)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}/payments:
+    get:
+      tags:
+        - Payments
+      summary: Get all payments for a booking
+      operationId: get_booking_payments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Payments
+      summary: Process a payment against a booking
+      description: Supports partial payments and idempotency keys to protect against retried requests.
+      operationId: create_payment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            example: "pay_idem_987234"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: Payment recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid payment amount or payment exceeds booking total
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{id}/review:
+    post:
+      tags:
+        - Reviews
+      summary: Post a review for a completed stay
+      description: Allowed only for checked_out bookings. Strictly one review per booking stay.
+      operationId: create_review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          description: Stay not checked out yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Review already submitted for this booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Rating not between 1 and 5
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/occupancy:
+    get:
+      tags:
+        - Reports
+      summary: Get property occupancy rate report
+      description: Arithmetic executed in PostgreSQL. Managers are restricted to their own property; owner sees all.
+      operationId: get_occupancy_report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: property_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Occupancy metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OccupancyReportResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Cross-property access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/revenue:
+    get:
+      tags:
+        - Reports
+      summary: Get revenue report (ADR & RevPAR)
+      description: Computes Average Daily Rate (ADR) and Revenue Per Available Room (RevPAR) in SQL.
+      operationId: get_revenue_report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: property_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Revenue and rate performance metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RevenueReportResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Cross-property access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: "Aarav Sharma"
+        email:
+          type: string
+          format: email
+          example: "aarav@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "StrongPassword123!"
+        phone:
+          type: string
+          example: "+91 98765 43210"
+        city:
+          type: string
+          example: "Bengaluru"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "guest@example.com"
+        password:
+          type: string
+          example: "Password123!"
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          example: 900
+
+    AccountResponse:
+      type: object
+      required: [account_id, name, email, role]
+      properties:
+        account_id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [guest, staff, manager, owner]
+        property_id:
+          type: integer
+          nullable: true
+        guest_id:
+          type: integer
+          nullable: true
+
+    PropertyResponse:
+      type: object
+      required: [property_id, name, city, stars]
+      properties:
+        property_id:
+          type: integer
+        name:
+          type: string
+        city:
+          type: string
+        stars:
+          type: integer
+
+    PropertyDetailResponse:
+      type: object
+      required: [property_id, name, city, stars, room_types]
+      properties:
+        property_id:
+          type: integer
+        name:
+          type: string
+        city:
+          type: string
+        stars:
+          type: integer
+        room_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomTypeResponse'
+
+    RoomTypeResponse:
+      type: object
+      required: [room_type_id, type_name, max_occupancy]
+      properties:
+        room_type_id:
+          type: integer
+        type_name:
+          type: string
+        max_occupancy:
+          type: integer
+
+    AvailableRoomResponse:
+      type: object
+      required: [room_id, property_id, room_number, room_type_id, type_name, max_occupancy, total_rate]
+      properties:
+        room_id:
+          type: integer
+        property_id:
+          type: integer
+        room_number:
+          type: string
+        room_type_id:
+          type: integer
+        type_name:
+          type: string
+        max_occupancy:
+          type: integer
+        nightly_rate:
+          type: number
+          format: float
+        total_rate:
+          type: number
+          format: float
+
+    CreateBookingRequest:
+      type: object
+      required: [room_id, check_in, check_out, guest_count, payment_method]
+      properties:
+        guest_id:
+          type: integer
+          description: Optional for staff booking on behalf of guest; defaults to caller guest_id
+        room_id:
+          type: integer
+          example: 1
+        check_in:
+          type: string
+          format: date
+          example: "2026-06-01"
+        check_out:
+          type: string
+          format: date
+          example: "2026-06-05"
+        guest_count:
+          type: integer
+          example: 2
+        payment_method:
+          type: string
+          enum: [card, upi, bank_transfer, cash]
+          example: "card"
+
+    BookingDetailResponse:
+      type: object
+      required: [booking_id, guest_id, room_id, check_in, check_out, guest_count, status, total_amount, amount_paid]
+      properties:
+        booking_id:
+          type: integer
+        guest_id:
+          type: integer
+        guest_name:
+          type: string
+        room_id:
+          type: integer
+        room_number:
+          type: string
+        property_name:
+          type: string
+        check_in:
+          type: string
+          format: date
+        check_out:
+          type: string
+          format: date
+        guest_count:
+          type: integer
+        status:
+          type: string
+          enum: [confirmed, checked_in, checked_out, cancelled, no_show]
+        total_amount:
+          type: number
+          format: float
+        amount_paid:
+          type: number
+          format: float
+
+    PaginatedBookingsResponse:
+      type: object
+      required: [total, limit, offset, items]
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingDetailResponse'
+
+    CreatePaymentRequest:
+      type: object
+      required: [amount, method]
+      properties:
+        amount:
+          type: number
+          format: float
+          example: 5000.00
+        method:
+          type: string
+          enum: [card, upi, bank_transfer, cash]
+          example: "upi"
+
+    PaymentResponse:
+      type: object
+      required: [payment_id, booking_id, amount, method, payment_date]
+      properties:
+        payment_id:
+          type: integer
+        booking_id:
+          type: integer
+        amount:
+          type: number
+          format: float
+        method:
+          type: string
+        payment_date:
+          type: string
+          format: date
+        idempotency_key:
+          type: string
+          nullable: true
+
+    CreateReviewRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: "Exceptional hospitality and peaceful river view!"
+
+    ReviewResponse:
+      type: object
+      required: [review_id, booking_id, rating, review_date]
+      properties:
+        review_id:
+          type: integer
+        booking_id:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+          nullable: true
+        review_date:
+          type: string
+          format: date
+
+    OccupancyReportResponse:
+      type: object
+      required: [property_id, property_name, total_rooms, occupied_room_nights, available_room_nights, occupancy_percentage]
+      properties:
+        property_id:
+          type: integer
+        property_name:
+          type: string
+        total_rooms:
+          type: integer
+        occupied_room_nights:
+          type: integer
+        available_room_nights:
+          type: integer
+        occupancy_percentage:
+          type: number
+          format: float
+
+    RevenueReportResponse:
+      type: object
+      required: [property_id, property_name, total_revenue, adr, revpar]
+      properties:
+        property_id:
+          type: integer
+        property_name:
+          type: string
+        total_revenue:
+          type: number
+          format: float
+        adr:
+          type: number
+          format: float
+          description: Average Daily Rate (Total Revenue / Rooms Sold)
+        revpar:
+          type: number
+          format: float
+          description: Revenue Per Available Room (Total Revenue / Total Available Rooms)
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "ROOM_UNAVAILABLE"
+            message:
+              type: string
+              example: "The room is not available for the requested dates."
+            details:
+              type: array
+              items:
+                type: object
