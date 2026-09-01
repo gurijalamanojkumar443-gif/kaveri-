@@ -913,11 +913,75 @@ async function settleBalance(bookingId, dueAmount) {
   await loadDashboard();
 }
 
-async function cancelBooking(id) {
-  if(!confirm(`Cancel booking #${id}? Cannot be undone.`)) return;
-  const {ok,error}=await apiJSON(`/bookings/${id}/cancel`,{method:'POST'});
-  if(!ok){showToast('Failed',error,'error');return;}
-  showToast('Cancelled',`Booking #${id} cancelled.`,'info');
+function cancelBooking(id) {
+  const b = allBookings.find(x => x.booking_id == id);
+  const paid = b ? (b.amount_paid || 0) : 0;
+  const prop = b ? (b.property_name || 'Kaveri Stays') : 'Kaveri Stays';
+  
+  document.getElementById('cancel-modal-title').textContent = 'Cancel Reservation';
+  document.getElementById('cancel-modal-body').innerHTML = `
+    <div style="text-align:center;padding:var(--space-2) 0 var(--space-4);">
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(229,62,62,0.12);border:1.5px solid #e53e3e;color:#fc8181;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto var(--space-3);">⚠️</div>
+      <div style="display:inline-block;padding:4px 12px;background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);border-radius:var(--radius-full);color:#feb2b2;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;margin-bottom:var(--space-2);">CANCELLATION REQUEST</div>
+      <h3 class="heading-serif" style="font-size:1.5rem;color:var(--cream-50);margin-bottom:6px;">Cancel Booking #${id}?</h3>
+      <p class="text-xs text-muted" style="margin-bottom:var(--space-4);">Under our flexible cancellation policy, your full deposit will be initiated for refund.</p>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);text-align:left;margin-bottom:var(--space-5);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Property</span><span class="booking-summary-value">${escHtml(prop)}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Deposit Paid</span><span class="booking-summary-value" style="color:var(--cream-50);">${formatCurrency(paid)}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span style="color:#68d391;font-weight:700;">Refund Eligible</span><span style="color:#68d391;font-weight:800;font-size:1.05rem;">${formatCurrency(paid)} (100%)</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+        <button class="btn btn-danger w-full" id="confirm-cancel-action-btn" style="padding:14px;border-radius:var(--radius-full);font-size:0.95rem;font-weight:700;" onclick="executeCancellation(${id})">Confirm Cancellation</button>
+        <button class="btn btn-outline w-full" style="padding:12px;border-radius:var(--radius-full);font-size:0.9rem;" onclick="closeCancelModal()">Keep My Reservation</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('cancel-modal-overlay')?.classList.add('active');
+}
+
+function closeCancelModal() {
+  document.getElementById('cancel-modal-overlay')?.classList.remove('active');
+}
+
+async function executeCancellation(id) {
+  const btn = document.getElementById('confirm-cancel-action-btn');
+  if (btn) setLoading(btn, true, 'Processing Cancellation…');
+  const { ok, error } = await apiJSON(`/bookings/${id}/cancel`, { method: 'POST' });
+  if (btn) setLoading(btn, false);
+  if (!ok) {
+    showToast('Failed to cancel', error, 'error');
+    return;
+  }
+  
+  const b = allBookings.find(x => x.booking_id == id);
+  const paid = b ? (b.amount_paid || 0) : 0;
+  
+  // Show the confirmation display
+  document.getElementById('cancel-modal-title').textContent = 'Cancellation Confirmed';
+  document.getElementById('cancel-modal-body').innerHTML = `
+    <div style="text-align:center;padding:var(--space-2) 0 var(--space-4);">
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(229,62,62,0.15);border:1.5px solid #e53e3e;color:#fc8181;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto var(--space-3);">✕</div>
+      <div style="display:inline-block;padding:4px 12px;background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);border-radius:var(--radius-full);color:#feb2b2;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;margin-bottom:var(--space-2);">RESERVATION CANCELLED</div>
+      <h3 class="heading-serif" style="font-size:1.7rem;color:var(--cream-50);margin-bottom:4px">Booking #${id} Cancelled</h3>
+      <p class="text-xs text-muted" style="margin-bottom:var(--space-5)">Status updated to: <strong style="color:#fc8181">cancelled</strong></p>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);text-align:left;margin-bottom:var(--space-6);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Booking ID</span><span class="booking-summary-value">#${id}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Refund Amount</span><span class="booking-summary-value" style="color:#68d391;font-weight:700;">${formatCurrency(paid)}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Refund Timeline</span><span class="booking-summary-value">3–5 Business Days</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span class="booking-summary-label">Cancellation Fee</span><span class="booking-summary-value" style="color:var(--cream-100);">₹0 (Free Cancellation)</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+        <button class="btn btn-forest w-full" style="padding:14px;border-radius:var(--radius-full);font-size:0.95rem;" onclick="closeCancelModal();loadDashboard();">View My Reservations</button>
+        <button class="btn btn-outline w-full" style="padding:12px;border-radius:var(--radius-full);font-size:0.9rem;" onclick="closeCancelModal();navigateTo('vacancies')">Book Another Stay ✦</button>
+      </div>
+    </div>
+  `;
+
+  showToast('Booking Cancelled', `Booking #${id} has been cancelled.`, 'info');
   await loadDashboard();
 }
 
@@ -1703,7 +1767,9 @@ Object.assign(window, {
   toggleUserDropdown,
   closeUserDropdown,
   settleBalance,
-  setDashboardFilter
+  setDashboardFilter,
+  executeCancellation,
+  closeCancelModal
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -1751,6 +1817,9 @@ function initApp() {
 
   // Info modal overlay click
   document.getElementById('info-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeInfoModal();});
+
+  // Cancel modal overlay click
+  document.getElementById('cancel-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeCancelModal();});
 
   // Review modal
   document.getElementById('review-modal-close')?.addEventListener('click',closeReviewModal);
