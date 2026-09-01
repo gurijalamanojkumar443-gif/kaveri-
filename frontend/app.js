@@ -1234,12 +1234,57 @@ async function logoutUser() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+   EXPOSE FUNCTIONS TO WINDOW (for inline onclick attributes)
+   ───────────────────────────────────────────────────────────────────────── */
+Object.assign(window, {
+  Auth,
+  DEMO_ACCOUNTS,
+  apiFetch,
+  apiJSON,
+  showToast,
+  navigateTo,
+  openAuthModal,
+  closeAuthModal,
+  switchAuthTab,
+  selectRoom,
+  viewProperty,
+  openBookingModal,
+  closeBookingModal,
+  confirmBooking,
+  showBookingSuccess,
+  closeSuccessModal,
+  openBookingDetail,
+  closeDetailModal,
+  openReviewModal,
+  closeReviewModal,
+  setRating,
+  submitReview,
+  cancelBooking,
+  adminCheckIn,
+  adminCheckOut,
+  runReports,
+  logoutUser,
+  searchAvailability,
+  searchVacancies,
+  loadDashboard,
+  loadAdminStats,
+  loadAdminTab
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
    INIT
    ───────────────────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
+  // Logo & navigation links
+  document.getElementById('logo-link')?.addEventListener('click', () => navigateTo('home'));
+  document.getElementById('nav-properties-link')?.addEventListener('click', () => {
+    navigateTo('home');
+    setTimeout(() => document.getElementById('properties-section')?.scrollIntoView({ behavior: 'smooth' }), 300);
+  });
+
   // Navbar scroll
   const navbar=document.getElementById('main-navbar');
-  window.addEventListener('scroll',()=>navbar.classList.toggle('scrolled',window.scrollY>60),{passive:true});
+  window.addEventListener('scroll',()=>navbar?.classList.toggle('scrolled',window.scrollY>60),{passive:true});
 
   // Nav routing
   document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>{
@@ -1280,16 +1325,16 @@ document.addEventListener('DOMContentLoaded', () => {
   ['login-email','login-password'].forEach(id=>{
     document.getElementById(id)?.addEventListener('focus',()=>{
       const overlay=document.getElementById('auth-modal-overlay');
-      if(overlay.classList.contains('active')) injectDemoCredentials();
+      if(overlay?.classList.contains('active')) injectDemoCredentials();
     });
   });
 
   // Mobile hamburger
   const hamburger = document.getElementById('hamburger-btn');
   const navLinks  = document.getElementById('main-nav-links');
-  function openMobileNav()  { navLinks.classList.add('mobile-open'); hamburger.classList.add('open'); hamburger.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
-  function closeMobileNav() { navLinks.classList.remove('mobile-open'); hamburger.classList.remove('open'); hamburger.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
-  hamburger?.addEventListener('click', () => navLinks.classList.contains('mobile-open') ? closeMobileNav() : openMobileNav());
+  function openMobileNav()  { navLinks?.classList.add('mobile-open'); hamburger?.classList.add('open'); hamburger?.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+  function closeMobileNav() { navLinks?.classList.remove('mobile-open'); hamburger?.classList.remove('open'); hamburger?.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+  hamburger?.addEventListener('click', () => navLinks?.classList.contains('mobile-open') ? closeMobileNav() : openMobileNav());
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeMobileNav(); });
 
   // Show hamburger on small screens
@@ -1301,4 +1346,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateNavForAuthState();
   navigateTo('home');
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+

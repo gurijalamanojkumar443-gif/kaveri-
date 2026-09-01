@@ -226,16 +226,5 @@
   </div>
 
   <script type="module" src="app.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('logo-link').addEventListener('click', () => navigateTo('home'));
-      document.getElementById('nav-properties-link').addEventListener('click', () => {
-        navigateTo('home');
-        setTimeout(() => document.getElementById('properties-section')?.scrollIntoView({ behavior: 'smooth' }), 300);
-      });
-      // Note: [data-nav] listeners are already bound in app.js DOMContentLoaded — no duplicate needed
-    });
-  </script>
 </body>
 </html>
-
