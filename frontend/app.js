@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    KAVERI STAYS — Frontend Application v2
-   Backend: FastAPI on http://localhost:8000
+   Backend: set via VITE_API_BASE env var (falls back to http://localhost:8000)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
 /* ─────────────────────────────────────────────────────────────────────────
    DEMO CREDENTIALS  (from 02_auth_schema.sql seed)
