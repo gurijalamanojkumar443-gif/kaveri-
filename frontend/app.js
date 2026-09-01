@@ -1509,6 +1509,16 @@ async function confirmBooking() {
   const guestCount = parseInt(document.getElementById('booking-guest-count')?.value || '1');
   const method = document.querySelector('input[name="payment-method"]:checked')?.value || 'card';
   
+  if (!Auth.isLoggedIn()) {
+    sessionStorage.setItem('pending_booking', JSON.stringify({
+      roomId, checkIn, checkOut, guests: guestCount, roomData, nights
+    }));
+    closeBookingModal();
+    openAuthModal('login');
+    showToast('Sign in required', 'Please sign in or select a demo guest account to complete your booking.', 'info');
+    return;
+  }
+
   // Validate guest count against room capacity
   const maxOcc = roomData?.max_occupancy || 99;
   if(guestCount > maxOcc){
@@ -1530,6 +1540,15 @@ async function confirmBooking() {
   if(btn) setLoading(btn, false);
   
   if(!ok){
+    if (error === 'Session expired' || error?.includes('401') || error?.includes('credentials') || error?.includes('Unauthorized')) {
+      sessionStorage.setItem('pending_booking', JSON.stringify({
+        roomId, checkIn, checkOut, guests: guestCount, roomData, nights
+      }));
+      closeBookingModal();
+      openAuthModal('login');
+      showToast('Session expired', 'Please log in to finalize your booking.', 'warning');
+      return;
+    }
     showToast('Booking failed', error, 'error');
     return;
   }
