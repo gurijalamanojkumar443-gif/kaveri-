@@ -214,7 +214,7 @@ registerPage('home', async (container) => {
       <div class="container">
         <div class="section-header"><div class="section-eyebrow">The Kaveri Difference</div><h2 class="section-title">Luxury Redefined</h2></div>
         <div class="features-grid">
-          ${[{icon:'🌿',title:'Immersive Nature',desc:'Designed to harmonize with coffee plantations, tea estates, and backwaters.'},{icon:'🍽️',title:'Farm-to-Table Dining',desc:'Hyper-local cuisines crafted from estate-grown produce.'},{icon:'🧖',title:'Signature Spa',desc:'Ancient Ayurvedic therapies and modern wellness rituals.'},{icon:'🔒',title:'Private & Secure',desc:'Exclusive access policies ensure your privacy.'},{icon:'⚡',title:'Instant Booking',desc:'Real-time availability with atomic reservation confirmation.'},{icon:'💎',title:'Curated Experiences',desc:'Wildlife safaris, stargazing, and backwater cruises.'}].map(f=>`<div class="feature-card"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p></div>`).join('')}
+          ${[{icon:'🌿',title:'Immersive Nature',desc:'Designed to harmonize with coffee plantations, tea estates, and backwaters.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🍽️',title:'Farm-to-Table Dining',desc:'Hyper-local cuisines crafted from estate-grown produce.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🧖',title:'Signature Spa',desc:'Ancient Ayurvedic therapies and modern wellness rituals.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🔒',title:'Private & Secure',desc:'Exclusive access policies ensure your privacy.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'⚡',title:'Instant Booking',desc:'Real-time availability with atomic reservation confirmation.',action:"document.querySelector('.search-bar')?.scrollIntoView({behavior:'smooth'})"},{icon:'💎',title:'Curated Experiences',desc:'Wildlife safaris, stargazing, and backwater cruises.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"}].map(f=>`<div class="feature-card" style="cursor:pointer;" onclick="${f.action}"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p></div>`).join('')}
         </div>
       </div>
     </section>`;
@@ -231,13 +231,20 @@ registerPage('home', async (container) => {
 
   await loadProperties();
 
+  // Auto-search availability on initial load so rooms are immediately visible
+  searchAvailability();
+
   document.getElementById('search-btn').addEventListener('click', ()=>searchAvailability());
   document.getElementById('hero-explore-btn').addEventListener('click', ()=>document.getElementById('properties-section').scrollIntoView({behavior:'smooth'}));
   document.getElementById('hero-vacancy-btn').addEventListener('click', ()=>navigateTo('vacancies'));
   document.getElementById('search-checkin').addEventListener('change', e=>{
     const d=new Date(e.target.value); d.setDate(d.getDate()+1);
     document.getElementById('search-checkout').min = d.toISOString().split('T')[0];
+    searchAvailability();
   });
+  document.getElementById('search-checkout').addEventListener('change', ()=>searchAvailability());
+  document.getElementById('search-property').addEventListener('change', ()=>searchAvailability());
+  document.getElementById('search-guests').addEventListener('change', ()=>searchAvailability());
 });
 
 /* ─── Load Properties ─────────────────────────────────────────────────── */
@@ -262,7 +269,7 @@ async function loadProperties() {
     'Alleppey':"Kerala's soul on our exclusive retreat surrounded by emerald backwater lagoons.",
   };
   grid.innerHTML = data.map((p,i)=>`
-    <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}">
+    <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}" onclick="viewProperty(${p.property_id})" style="cursor:pointer;">
       <div class="property-card-img-wrapper" style="background:${bgs[i%3]};display:flex;align-items:center;justify-content:center;font-size:5rem;cursor:pointer;">
         ${emojis[i%3]}
         <span class="property-card-badge">${escHtml(p.city)}</span>
@@ -274,7 +281,7 @@ async function loadProperties() {
         <div class="property-card-description" id="prop-desc-${p.property_id}">Loading…</div>
         <div class="property-card-footer">
           <div class="property-room-types" id="prop-rooms-${p.property_id}"></div>
-          <button class="btn btn-outline btn-sm" onclick="viewProperty(${p.property_id})">Explore →</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();viewProperty(${p.property_id})">Explore →</button>
         </div>
       </div>
     </div>`).join('');
@@ -284,33 +291,117 @@ async function loadProperties() {
       const de=document.getElementById(`prop-desc-${p.property_id}`);
       const re=document.getElementById(`prop-rooms-${p.property_id}`);
       if(de) de.textContent=descs[p.city]||`A luxury property in ${p.city}.`;
-      if(re&&det.room_types) re.innerHTML=det.room_types.map(rt=>`<span class="room-type-chip">${escHtml(rt.type_name)}</span>`).join('');
+      if(re&&det.room_types) re.innerHTML=det.room_types.map(rt=>`<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();viewProperty(${p.property_id},${rt.room_type_id||rt.type_id})">${escHtml(rt.type_name)}</span>`).join('');
     }
   }
 }
 
+function viewProperty(propId, roomTypeId=null) {
+  const sel=document.getElementById('search-property');
+  if(sel) sel.value=propId;
+  searchAvailability(propId, roomTypeId);
+}
+
 /* ─── Search Availability ─────────────────────────────────────────────── */
-async function searchAvailability() {
+async function searchAvailability(overridePropId=null, roomTypeId=null) {
+  if (overridePropId !== null) {
+    const sel = document.getElementById('search-property');
+    if (sel) sel.value = overridePropId;
+  }
   const propId   = document.getElementById('search-property')?.value;
   const checkIn  = document.getElementById('search-checkin')?.value;
   const checkOut = document.getElementById('search-checkout')?.value;
   const guests   = parseInt(document.getElementById('search-guests')?.value||'1');
-  if (!propId) { showToast('Select a property','','warning'); return; }
   if (!checkIn||!checkOut) { showToast('Select dates','','warning'); return; }
   if (new Date(checkOut)<=new Date(checkIn)) { showToast('Invalid dates','Check-out must be after check-in.','error'); return; }
   const btn = document.getElementById('search-btn');
-  setLoading(btn,true,'Searching…');
+  if (btn) setLoading(btn,true,'Searching…');
   const wrapper = document.getElementById('availability-results-wrapper');
   if(wrapper) wrapper.innerHTML = `<div class="availability-section fade-in"><div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>`;
-  const {ok,data,error} = await apiJSON(`/rooms/availability?${new URLSearchParams({property_id:propId,check_in:checkIn,check_out:checkOut})}`);
-  setLoading(btn,false);
-  if(!ok){ showToast('Search failed',error,'error'); if(wrapper)wrapper.innerHTML=''; return; }
-  renderAvailabilityResults(data,checkIn,checkOut,guests,propId);
+  const nights = nightsBetween(checkIn,checkOut);
+
+  // If a specific property is chosen
+  if (propId) {
+    const params = new URLSearchParams({property_id:propId,check_in:checkIn,check_out:checkOut});
+    if (roomTypeId) params.set('room_type_id', roomTypeId);
+    const {ok,data,error} = await apiJSON(`/rooms/availability?${params}`);
+    if (btn) setLoading(btn,false);
+    if(!ok){ showToast('Search failed',error,'error'); if(wrapper)wrapper.innerHTML=''; return; }
+    renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeId);
+  } else {
+    // Search across ALL properties
+    const propsToQuery = propertiesCache || [];
+    let allRooms = [];
+    for (const prop of propsToQuery) {
+      if (!prop) continue;
+      const params = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
+      if (roomTypeId) params.set('room_type_id', roomTypeId);
+      const {ok,data} = await apiJSON(`/rooms/availability?${params}`);
+      if(ok&&data) allRooms.push(...data.map(r=>({...r,property_name:prop.name,property_city:prop.city})));
+    }
+    if (btn) setLoading(btn,false);
+    renderMultiPropertyAvailability(allRooms,checkIn,checkOut,guests,nights);
+  }
 }
 
 const roomsCache = {};
 
-function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
+function renderMultiPropertyAvailability(allRooms,checkIn,checkOut,guests,nights) {
+  const wrapper = document.getElementById('availability-results-wrapper');
+  if (!wrapper) return;
+  if(!allRooms || allRooms.length===0){
+    wrapper.innerHTML=`<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try adjusting your dates.</div></div></div>`;
+    return;
+  }
+  const filtered = guests>1 ? (allRooms.filter(r=>r.max_occupancy>=guests).length>0 ? allRooms.filter(r=>r.max_occupancy>=guests) : allRooms) : allRooms;
+  filtered.forEach(r => { roomsCache[r.room_id] = r; });
+
+  const grouped = {};
+  filtered.forEach(r => {
+    const key = r.property_id;
+    if(!grouped[key]) grouped[key]={name:r.property_name,city:r.property_city,rooms:[]};
+    grouped[key].rooms.push(r);
+  });
+
+  wrapper.innerHTML=`
+    <div class="availability-section fade-in" id="availability-section">
+      <div class="availability-header">
+        <div>
+          <div class="section-eyebrow">All Properties · Live Availability</div>
+          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${filtered.length} Room${filtered.length!==1?'s':''} Available · ${nights} Night${nights!==1?'s':''}</h3>
+          <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)} across ${Object.keys(grouped).length} destinations</div>
+        </div>
+      </div>
+      ${Object.values(grouped).map(g=>`
+        <div style="margin-bottom:var(--space-8)">
+          <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);">
+            <div style="width:36px;height:36px;border-radius:var(--radius-lg);background:rgba(212,137,31,0.15);border:1px solid rgba(212,137,31,0.3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🏨</div>
+            <div>
+              <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--cream-50)">${escHtml(g.name)}</div>
+              <div class="text-xs text-muted">${escHtml(g.city)} · ${g.rooms.length} room${g.rooms.length!==1?'s':''} available</div>
+            </div>
+          </div>
+          <div class="rooms-grid">
+            ${g.rooms.map(r=>`
+              <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${r.property_id}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',${guests})" style="cursor:pointer;">
+                <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
+                <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
+                <div class="room-card-meta">
+                  <div class="room-meta-item"><span class="room-meta-icon">👥</span> Max ${r.max_occupancy} guests</div>
+                  <div class="room-meta-item"><span class="room-meta-icon">🌙</span> ${nights} nights</div>
+                </div>
+                <div class="room-card-pricing">
+                  <div><div class="room-nightly-rate">${formatCurrency(r.nightly_rate)} / night</div><div class="room-total-label">Total</div></div>
+                  <div class="room-total-rate">${formatCurrency(r.total_rate)}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  wrapper.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeId=null) {
   const wrapper = document.getElementById('availability-results-wrapper');
   if (!wrapper) return;
   const nights = nightsBetween(checkIn,checkOut);
@@ -319,7 +410,11 @@ function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
     wrapper.innerHTML=`<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try different dates or another property.</div></div></div>`;
     return;
   }
-  const rooms = guests>1 ? (data.filter(r=>r.max_occupancy>=guests).length>0 ? data.filter(r=>r.max_occupancy>=guests) : data) : data;
+  let rooms = guests>1 ? (data.filter(r=>r.max_occupancy>=guests).length>0 ? data.filter(r=>r.max_occupancy>=guests) : data) : data;
+  if (roomTypeId) {
+    const filteredByType = rooms.filter(r => r.room_type_id == roomTypeId || r.type_id == roomTypeId);
+    if (filteredByType.length > 0) rooms = filteredByType;
+  }
   rooms.forEach(r => { roomsCache[r.room_id] = { ...r, property_name: propName, property_id: propId }; });
 
   wrapper.innerHTML=`
