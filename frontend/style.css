@@ -1472,3 +1472,97 @@ footer {
   color: var(--gold-200);
 }
 .payment-method-icon { font-size: 1.3rem; }
+
+/* ─── User Dropdown Menu ─────────────────────────────────────────────────── */
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: rgba(22, 33, 62, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 137, 31, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: var(--space-2);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeInDown 0.2s ease;
+}
+.user-dropdown-menu.hidden { display: none; }
+.dropdown-header {
+  padding: var(--space-2) var(--space-3);
+}
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--cream-100);
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+.dropdown-item:hover {
+  background: rgba(212, 137, 31, 0.15);
+  color: var(--gold-200);
+  transform: translateX(3px);
+}
+.dropdown-item-danger {
+  color: #fc8181;
+}
+.dropdown-item-danger:hover {
+  background: rgba(229, 62, 62, 0.15);
+  color: #feb2b2;
+}
+
+/* ─── Room Type Chips ─────────────────────────────────────────────────────── */
+.room-type-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--gold-300);
+  margin-right: 4px;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+.room-type-chip:hover {
+  background: rgba(212, 137, 31, 0.25);
+  border-color: var(--gold-400);
+  color: var(--cream-50);
+  transform: translateY(-2px);
+}
+
+/* ─── Feature Card Hover ─────────────────────────────────────────────────── */
+.feature-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.feature-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 137, 31, 0.4);
+  box-shadow: 0 10px 30px rgba(212, 137, 31, 0.1);
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+

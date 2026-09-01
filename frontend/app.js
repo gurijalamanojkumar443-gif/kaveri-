@@ -113,12 +113,19 @@ function updateNavForAuthState() {
   const navAuth = document.getElementById('nav-auth');
   const navUser = document.getElementById('nav-user');
   const navAdminLink = document.getElementById('nav-admin-link');
+  const dropAdminBtn = document.getElementById('dropdown-admin-btn');
   if (user) {
     navAuth.classList.add('hidden');
     navUser.classList.remove('hidden');
     document.getElementById('nav-user-name').textContent = user.name.split(' ')[0];
     document.getElementById('nav-user-initials').textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    if (navAdminLink) navAdminLink.classList.toggle('hidden', !Auth.isStaff());
+    const isStaff = Auth.isStaff();
+    if (navAdminLink) navAdminLink.classList.toggle('hidden', !isStaff);
+    if (dropAdminBtn) dropAdminBtn.classList.toggle('hidden', !isStaff);
+    const dropName = document.getElementById('dropdown-user-name');
+    const dropRole = document.getElementById('dropdown-user-role');
+    if (dropName) dropName.textContent = user.name;
+    if (dropRole) dropRole.textContent = `Role: ${user.role.toUpperCase()}`;
   } else {
     navAuth.classList.remove('hidden');
     navUser.classList.add('hidden');
@@ -134,6 +141,12 @@ function registerPage(name,fn) { pages[name]=fn; }
 let currentPage = null;
 function navigateTo(name,params={}) {
   currentPage = name;
+  closeUserDropdown();
+  // Highlight active link in navbar
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const isAct = link.dataset.nav === name;
+    link.classList.toggle('active', isAct);
+  });
   const main = document.getElementById('main-content');
   main.innerHTML = '';
   if (pages[name]) pages[name](main,params);
@@ -1348,6 +1361,100 @@ async function logoutUser() {
   showToast('Signed out','You have been signed out.','info');
 }
 
+/* ─── Info & Experience Modals ─────────────────────────────────────────── */
+const INFO_DATA = {
+  safaris: {
+    title: '🌿 Wildlife & Wilderness Safaris',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">🐅</div>
+      <p style="margin-bottom:var(--space-3);color:var(--cream-100);">Embark on dawn and dusk jeep safaris through the protected reserves surrounding Kaveri Riverside in Coorg and Kaveri Hilltop in Ooty.</p>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Available At</span><span class="booking-summary-value">Coorg & Ooty</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Schedule</span><span class="booking-summary-value">6:00 AM & 4:30 PM Daily</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Guided By</span><span class="booking-summary-value">Certified Naturalists</span></div>
+      </div>
+      <p class="text-xs text-muted">Complimentary for guests booked in Suite rooms; add-on available for all bookings at concierge desk.</p>
+    `
+  },
+  spa: {
+    title: '🧖 Ayurvedic Signature Spa',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">🌸</div>
+      <p style="margin-bottom:var(--space-3);color:var(--cream-100);">Immerse in ancient Vedic wellness therapies using hand-pressed herbal oils, steam sanctuaries, and meditation sessions overlooking the mist-clad hills.</p>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Available At</span><span class="booking-summary-value">All 3 Properties</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Signature Ritual</span><span class="booking-summary-value">Abhyanga & Shirodhara</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Operating Hours</span><span class="booking-summary-value">7:00 AM – 8:00 PM</span></div>
+      </div>
+    `
+  },
+  tea: {
+    title: '🍃 Estate Tea & Coffee Tours',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">☕</div>
+      <p style="margin-bottom:var(--space-3);color:var(--cream-100);">Walk amidst 100-year-old organic Arabica coffee and Nilgiri tea plantations with our master estate curator. Includes artisan cupping and tasting masterclass.</p>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Available At</span><span class="booking-summary-value">Coorg & Ooty</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Includes</span><span class="booking-summary-value">Private Tasting Session</span></div>
+      </div>
+    `
+  },
+  cruise: {
+    title: '🌊 Sunset Backwater Cruises',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">⛵</div>
+      <p style="margin-bottom:var(--space-3);color:var(--cream-100);">Glide across the tranquil emerald lagoons of Alleppey on our handcrafted luxury cedar houseboats. Enjoy live classical music and authentic Kerala coastal delicacies.</p>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Available At</span><span class="booking-summary-value">Alleppey Backwaters</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">3 Hours Sunset Voyage</span></div>
+      </div>
+    `
+  },
+  cancellation: {
+    title: '🛡️ Flexible Cancellation Policy',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">📜</div>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Full Refund</span><span class="booking-summary-value" style="color:var(--forest-300)">Up to 48 hours before check-in</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Late Cancellation</span><span class="booking-summary-value">30% deposit retained</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Modification</span><span class="booking-summary-value">Free date changes subject to availability</span></div>
+      </div>
+      <p class="text-xs text-muted">You can cancel any confirmed booking with 1-click directly from the My Bookings dashboard.</p>
+    `
+  },
+  contact: {
+    title: '📞 Concierge & Support',
+    body: `
+      <div style="text-align:center;margin-bottom:var(--space-4);font-size:3rem;">🛎️</div>
+      <p style="margin-bottom:var(--space-3);color:var(--cream-100);">Our 24/7 dedicated guest concierge is always at your service to craft personalized itineraries, private transfers, and special celebration requests.</p>
+      <div class="booking-summary" style="margin-bottom:var(--space-4);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Email Concierge</span><span class="booking-summary-value" style="color:var(--gold-300)">api@kaveristays.in</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Toll Free</span><span class="booking-summary-value">+91 1800 200 5283</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Support Hours</span><span class="booking-summary-value">24 Hours / 7 Days</span></div>
+      </div>
+    `
+  }
+};
+
+function openInfoModal(type) {
+  const data = INFO_DATA[type] || { title: 'Kaveri Stays', body: '<p>Luxury hospitality across Coorg, Ooty, and Alleppey.</p>' };
+  document.getElementById('info-modal-title').textContent = data.title;
+  document.getElementById('info-modal-body').innerHTML = data.body;
+  document.getElementById('info-modal-overlay').classList.add('active');
+}
+function closeInfoModal() {
+  document.getElementById('info-modal-overlay')?.classList.remove('active');
+}
+
+/* ─── User Dropdown ──────────────────────────────────────────────────────── */
+function toggleUserDropdown() {
+  const dropdown = document.getElementById('user-dropdown-menu');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+function closeUserDropdown() {
+  document.getElementById('user-dropdown-menu')?.classList.add('hidden');
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    EXPOSE FUNCTIONS TO WINDOW (for inline onclick attributes)
    ───────────────────────────────────────────────────────────────────────── */
@@ -1383,7 +1490,11 @@ Object.assign(window, {
   searchVacancies,
   loadDashboard,
   loadAdminStats,
-  loadAdminTab
+  loadAdminTab,
+  openInfoModal,
+  closeInfoModal,
+  toggleUserDropdown,
+  closeUserDropdown
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -1426,14 +1537,23 @@ function initApp() {
   document.getElementById('detail-modal-close')?.addEventListener('click',closeDetailModal);
   document.getElementById('detail-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeDetailModal();});
 
+  // Info modal overlay click
+  document.getElementById('info-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeInfoModal();});
+
   // Review modal
   document.getElementById('review-modal-close')?.addEventListener('click',closeReviewModal);
   document.getElementById('review-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeReviewModal();});
   document.getElementById('submit-review-btn')?.addEventListener('click',submitReview);
   document.getElementById('cancel-review-btn')?.addEventListener('click',closeReviewModal);
 
-  // User menu
-  document.getElementById('nav-user-btn')?.addEventListener('click',()=>navigateTo(Auth.isStaff()?'admin':'dashboard'));
+  // User menu & Dropdown
+  document.getElementById('nav-user-btn')?.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    toggleUserDropdown();
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#nav-user')) closeUserDropdown();
+  });
   document.getElementById('nav-logout-btn')?.addEventListener('click',logoutUser);
 
   // Focus-based autofill hint on login fields
@@ -1468,4 +1588,5 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
 

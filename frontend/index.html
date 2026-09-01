@@ -31,12 +31,25 @@
           <button class="btn-nav-secondary" id="open-login-btn">Sign In</button>
           <button class="btn btn-primary btn-sm" id="open-register-btn">Join Free</button>
         </div>
-        <div id="nav-user" class="hidden" style="display:flex;align-items:center;gap:var(--space-3);">
-          <button class="user-avatar-btn" id="nav-user-btn" aria-label="User menu">
+        <div id="nav-user" class="hidden" style="display:flex;align-items:center;gap:var(--space-3);position:relative;">
+          <button class="user-avatar-btn" id="nav-user-btn" aria-label="User menu" aria-haspopup="true" aria-expanded="false">
             <div class="user-avatar-icon" id="nav-user-initials">KS</div>
             <span id="nav-user-name">Guest</span>
             <span style="font-size:0.7rem;opacity:0.6">▾</span>
           </button>
+          <div class="user-dropdown-menu hidden" id="user-dropdown-menu">
+            <div class="dropdown-header">
+              <div style="font-weight:600;color:var(--cream-50);" id="dropdown-user-name">User</div>
+              <div style="font-size:0.75rem;color:var(--charcoal-300);" id="dropdown-user-role">Guest</div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" onclick="navigateTo('profile');closeUserDropdown();">👤 My Profile</button>
+            <button class="dropdown-item" onclick="navigateTo('dashboard');closeUserDropdown();">📋 My Bookings</button>
+            <button class="dropdown-item" onclick="navigateTo('vacancies');closeUserDropdown();">🏨 Vacancies</button>
+            <button class="dropdown-item hidden" id="dropdown-admin-btn" onclick="navigateTo('admin');closeUserDropdown();">⚙️ Admin Panel</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item dropdown-item-danger" onclick="logoutUser();closeUserDropdown();">🚪 Sign Out</button>
+          </div>
           <button class="btn-nav-secondary" id="nav-logout-btn">Sign Out</button>
         </div>
         <!-- Hamburger (mobile only) -->
@@ -57,7 +70,7 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <div class="logo" style="margin-bottom:var(--space-4);">
+          <div class="logo" style="margin-bottom:var(--space-4);cursor:pointer;" onclick="navigateTo('home')">
             <div class="logo-mark">K</div>
             <span class="logo-text">Kaveri <span>Stays</span></span>
           </div>
@@ -66,26 +79,26 @@
         <div>
           <div class="footer-heading">Properties</div>
           <div class="footer-links">
-            <span class="footer-link">Coorg Estate</span>
-            <span class="footer-link">Ooty Retreat</span>
-            <span class="footer-link">Alleppey Backwaters</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('home');setTimeout(()=>viewProperty(1),200)">Coorg Estate</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('home');setTimeout(()=>viewProperty(2),200)">Ooty Retreat</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('home');setTimeout(()=>viewProperty(3),200)">Alleppey Backwaters</span>
           </div>
         </div>
         <div>
           <div class="footer-heading">Experiences</div>
           <div class="footer-links">
-            <span class="footer-link">Wildlife Safaris</span>
-            <span class="footer-link">Ayurvedic Spa</span>
-            <span class="footer-link">Tea Garden Tours</span>
-            <span class="footer-link">Backwater Cruises</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('safaris')">Wildlife Safaris</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('spa')">Ayurvedic Spa</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('tea')">Tea Garden Tours</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('cruise')">Backwater Cruises</span>
           </div>
         </div>
         <div>
           <div class="footer-heading">Support</div>
           <div class="footer-links">
-            <span class="footer-link" data-nav="dashboard" style="cursor:pointer;">My Bookings</span>
-            <span class="footer-link">Cancellation Policy</span>
-            <span class="footer-link">Contact Us</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('dashboard')">My Bookings</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('cancellation')">Cancellation Policy</span>
+            <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('contact')">Contact Us</span>
           </div>
         </div>
       </div>
@@ -221,6 +234,21 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="cancel-review-btn">Cancel</button>
         <button class="btn btn-primary" id="submit-review-btn">Submit Review ⭐</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO & EXPERIENCES MODAL -->
+  <div class="modal-overlay" id="info-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="info-modal-title">Experience</h2>
+        <button class="modal-close" id="info-modal-close" onclick="closeInfoModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="info-modal-body"></div>
+      <div class="modal-footer" id="info-modal-footer">
+        <button class="btn btn-secondary" onclick="closeInfoModal()">Close</button>
+        <button class="btn btn-primary" id="info-modal-action" onclick="closeInfoModal();navigateTo('vacancies')">Book a Stay ✦</button>
       </div>
     </div>
   </div>
