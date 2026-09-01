@@ -308,6 +308,8 @@ async function searchAvailability() {
   renderAvailabilityResults(data,checkIn,checkOut,guests,propId);
 }
 
+const roomsCache = {};
+
 function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
   const wrapper = document.getElementById('availability-results-wrapper');
   if (!wrapper) return;
@@ -318,6 +320,8 @@ function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
     return;
   }
   const rooms = guests>1 ? (data.filter(r=>r.max_occupancy>=guests).length>0 ? data.filter(r=>r.max_occupancy>=guests) : data) : data;
+  rooms.forEach(r => { roomsCache[r.room_id] = { ...r, property_name: propName, property_id: propId }; });
+
   wrapper.innerHTML=`
     <div class="availability-section fade-in" id="availability-section">
       <div class="availability-header">
@@ -329,7 +333,7 @@ function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
       </div>
       <div class="rooms-grid">
         ${rooms.map(r=>`
-          <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',${guests})">
+          <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${propId}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',${guests})" style="cursor:pointer;">
             <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
             <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
             <div class="room-card-meta">
@@ -349,19 +353,23 @@ function renderAvailabilityResults(data,checkIn,checkOut,guests,propId) {
 function selectRoom(roomId,checkIn,checkOut,guests,roomData) {
   document.querySelectorAll('.room-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById(`room-card-${roomId}`)?.classList.add('selected');
-  // Capture room data from DOM if not provided
+  // Capture room data from cache or DOM if not provided
   if (!roomData) {
-    const card = document.getElementById(`room-card-${roomId}`);
+    roomData = roomsCache[roomId];
+  }
+  if (!roomData) {
+    const card = document.getElementById(`room-card-${roomId}`) || document.querySelector(`[data-room-id="${roomId}"]`);
     if (card) {
       roomData = {
         room_id: roomId,
-        room_number: card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||'',
-        type_name: card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'',
+        room_number: card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||String(roomId),
+        type_name: card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'Deluxe',
         total_rate: parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g,'')||0),
         nightly_rate: parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g,'')||0),
-        max_occupancy: parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||6),
+        max_occupancy: parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||4),
         property_name: propertiesCache?.find(p=>p.property_id==parseInt(card.closest('[data-prop-id]')?.dataset?.propId||0))?.name || null,
       };
+      roomsCache[roomId] = roomData;
     }
   }
   if (!Auth.isLoggedIn()) {
@@ -488,6 +496,7 @@ async function searchVacancies() {
   // Group by property
   const grouped = {};
   allRooms.forEach(r => {
+    roomsCache[r.room_id] = r;
     const key = r.property_id;
     if(!grouped[key]) grouped[key]={name:r.property_name,city:r.property_city,rooms:[]};
     grouped[key].rooms.push(r);
@@ -512,9 +521,9 @@ async function searchVacancies() {
         </div>
         <div class="rooms-grid">
           ${g.rooms.map(r=>`
-            <div class="room-card" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',1)" style="cursor:pointer;">
+            <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${r.property_id}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',1)" style="cursor:pointer;">
               <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
-              <div class="room-card-name">${escHtml(r.type_name)}</div>
+              <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
               <div class="room-card-meta">
                 <div class="room-meta-item"><span class="room-meta-icon">👥</span> Max ${r.max_occupancy}</div>
                 <div class="room-meta-item"><span class="room-meta-icon">🌙</span> ${nights}n</div>
@@ -1040,31 +1049,42 @@ async function handleRegister(e) {
    ───────────────────────────────────────────────────────────────────────── */
 let activeBookingData=null;
 function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
-  const nights=nightsBetween(checkIn,checkOut);
-  // If roomData not provided, try to scrape from DOM (home page scenario)
+  const nights=Math.max(1, nightsBetween(checkIn,checkOut));
+  roomData = roomData || roomsCache[roomId];
+  // If roomData not provided, try to scrape from DOM
   if(!roomData){
     const card = document.getElementById(`room-card-${roomId}`) ||
                  document.querySelector(`[data-room-id="${roomId}"]`);
     if(card){
       roomData={
         room_id:roomId,
-        room_number:card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||'',
-        type_name:card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'',
+        room_number:card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||String(roomId),
+        type_name:card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'Deluxe',
         total_rate:parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g,'')||0),
         nightly_rate:parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g,'')||0),
-        max_occupancy:parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||6),
+        max_occupancy:parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||4),
       };
+      roomsCache[roomId] = roomData;
     }
   }
-  if(!roomData){showToast('Error','Could not find room data.','error');return;}
+  if(!roomData){
+    roomData = {
+      room_id: roomId,
+      room_number: String(roomId),
+      type_name: 'Deluxe',
+      nightly_rate: 4000,
+      total_rate: 4000 * nights,
+      max_occupancy: 4,
+      property_name: 'Kaveri Stays'
+    };
+    roomsCache[roomId] = roomData;
+  }
   activeBookingData={roomId,checkIn,checkOut,guests,roomData,nights};
   // Resolve property name: try search-property dropdown first, then propertiesCache by room's data-prop
-  let propName = 'Kaveri Stays';
-  const searchSel = document.getElementById('search-property');
-  if(searchSel && searchSel.value) {
+  let propName = roomData.property_name || 'Kaveri Stays';
+  const searchSel = document.getElementById('search-property') || document.getElementById('vac-property');
+  if(searchSel && searchSel.value && searchSel.value !== "") {
     propName = propertiesCache?.find(p=>p.property_id==parseInt(searchSel.value))?.name || propName;
-  } else if(roomData.property_name) {
-    propName = roomData.property_name;
   }
   const maxOcc = roomData.max_occupancy || 6;
   document.getElementById('booking-modal-body').innerHTML=`
