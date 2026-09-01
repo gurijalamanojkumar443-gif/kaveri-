@@ -92,8 +92,8 @@ def create_booking_atomic(
     db.add(new_booking)
     db.flush()  # Triggers database exclusion constraints and PL/pgSQL triggers
 
-    # 2. Insert initial deposit payment (50% or full amount)
-    deposit_amount = (total_amount / Decimal("2")).quantize(Decimal("0.01"))
+    # 2. Insert initial deposit payment (20% deposit)
+    deposit_amount = (total_amount * Decimal("0.20")).quantize(Decimal("0.01"))
     new_payment = Payment(
         booking_id=new_booking.booking_id,
         amount=deposit_amount,

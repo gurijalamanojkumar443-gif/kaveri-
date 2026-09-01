@@ -799,6 +799,8 @@ registerPage('dashboard', async (container) => {
 });
 
 let allBookings=[];
+let currentStatusFilter = '';
+
 async function loadDashboard() {
   const {ok,data}=await apiJSON('/bookings?limit=100');
   if(!ok||!data){ document.getElementById('bookings-area').innerHTML=`<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load bookings</div></div>`; return; }
@@ -806,46 +808,111 @@ async function loadDashboard() {
   const confirmed =allBookings.filter(b=>b.status==='confirmed').length;
   const checkedIn =allBookings.filter(b=>b.status==='checked_in').length;
   const completed =allBookings.filter(b=>b.status==='checked_out').length;
+  const cancelled =allBookings.filter(b=>b.status==='cancelled').length;
   const totalSpent=allBookings.reduce((s,b)=>s+(b.amount_paid||0),0);
+  
   const statsEl=document.getElementById('dash-stats');
   if(statsEl) statsEl.innerHTML=`
     <div class="stat-card stat-card-gold"><div class="stat-card-label">Total Bookings</div><div class="stat-card-value">${data.total}</div><div class="stat-card-icon">📋</div></div>
     <div class="stat-card stat-card-blue"><div class="stat-card-label">Upcoming</div><div class="stat-card-value">${confirmed}</div><div class="stat-card-icon">📅</div></div>
     <div class="stat-card stat-card-green"><div class="stat-card-label">Active Stays</div><div class="stat-card-value">${checkedIn}</div><div class="stat-card-icon">🏨</div></div>
     <div class="stat-card stat-card-purple"><div class="stat-card-label">Amount Paid</div><div class="stat-card-value" style="font-size:1.3rem">${formatCurrency(totalSpent)}</div><div class="stat-card-icon">💰</div></div>`;
-  loadBookingsTable('');
+  
+  // Render filter pills
+  const filterPillsContainer = document.getElementById('booking-status-filter');
+  if (filterPillsContainer) {
+    filterPillsContainer.parentElement.innerHTML = `
+      <div class="filter-pills-bar">
+        <button class="filter-pill ${currentStatusFilter===''?'active':''}" onclick="setDashboardFilter('')">All Stays <span class="filter-pill-count">${allBookings.length}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='confirmed'?'active':''}" onclick="setDashboardFilter('confirmed')">Confirmed <span class="filter-pill-count">${confirmed}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='checked_out'?'active':''}" onclick="setDashboardFilter('checked_out')">Completed <span class="filter-pill-count">${completed}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='cancelled'?'active':''}" onclick="setDashboardFilter('cancelled')">Cancelled <span class="filter-pill-count">${cancelled}</span></button>
+      </div>`;
+  }
+  loadBookingsTable(currentStatusFilter);
 }
+
+function setDashboardFilter(status) {
+  currentStatusFilter = status;
+  loadDashboard();
+}
+
 function loadBookingsTable(statusFilter) {
   const filtered=statusFilter?allBookings.filter(b=>b.status===statusFilter):allBookings;
   const area=document.getElementById('bookings-area'); if(!area) return;
   if(filtered.length===0){
-    area.innerHTML=`<div class="empty-state"><div class="empty-state-icon">🌴</div><div class="empty-state-title">No bookings yet</div><div class="empty-state-desc">Ready to plan your next escape?</div><button class="btn btn-primary" onclick="navigateTo('home')">Explore Properties</button></div>`;
+    area.innerHTML=`<div class="empty-state"><div class="empty-state-icon">🌴</div><div class="empty-state-title">No bookings found</div><div class="empty-state-desc">Ready to plan your next escape?</div><button class="btn btn-primary" onclick="navigateTo('home')">Explore Properties</button></div>`;
     return;
   }
   area.innerHTML=`
-    <div class="bookings-table-wrapper">
-      <table class="bookings-table">
-        <thead><tr><th>#</th><th>Property</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Guests</th><th>Status</th><th>Total</th><th>Paid</th><th>Actions</th></tr></thead>
-        <tbody>${filtered.map(b=>`
-          <tr>
-            <td><span style="color:var(--gold-300);font-weight:600">#${b.booking_id}</span></td>
-            <td>${escHtml(b.property_name||'—')}</td>
-            <td>${escHtml(b.room_number||'—')}</td>
-            <td>${formatDate(b.check_in)}</td>
-            <td>${formatDate(b.check_out)}</td>
-            <td>${b.guest_count}</td>
-            <td>${statusBadge(b.status)}</td>
-            <td>${formatCurrency(b.total_amount)}</td>
-            <td>${formatCurrency(b.amount_paid)}</td>
-            <td><div style="display:flex;gap:var(--space-2)">
-              <button class="btn btn-ghost btn-sm" onclick="openBookingDetail(${b.booking_id})" title="View">👁</button>
-              ${b.status==='confirmed'?`<button class="btn btn-danger btn-sm" onclick="cancelBooking(${b.booking_id})" title="Cancel">✕</button>`:''}
-              ${b.status==='checked_out'?`<button class="btn btn-success btn-sm" onclick="openReviewModal(${b.booking_id})" title="Review">★</button>`:''}
-            </div></td>
-          </tr>`).join('')}</tbody>
-      </table>
+    <div class="stay-cards-list">
+      ${filtered.map(b=>{
+        const nights = Math.max(1, nightsBetween(b.check_in, b.check_out));
+        const due = Math.max(0, (b.total_amount || 0) - (b.amount_paid || 0));
+        const method = (b.payment_method || 'card').toUpperCase();
+        return `
+          <div class="stay-card" id="stay-card-${b.booking_id}">
+            <div class="stay-card-header">
+              <div>
+                <span class="stay-card-title">BOOKING #${b.booking_id}</span>
+                <span class="stay-card-badge">ROOM ID ${b.room_id || b.room_number || '—'}</span>
+              </div>
+              <div>${statusBadge(b.status)}</div>
+            </div>
+            
+            <div class="stay-card-body">
+              <div class="stay-dates-group">
+                <div class="stay-date-box">
+                  <div class="stay-date-label">Check-In</div>
+                  <div class="stay-date-value">${formatDate(b.check_in)}</div>
+                </div>
+                <div class="stay-date-box">
+                  <div class="stay-date-label">Check-Out</div>
+                  <div class="stay-date-value">${formatDate(b.check_out)}</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="stay-meta">${nights} Night${nights>1?'s':''} · ${b.guest_count} Guest${b.guest_count>1?'s':''}</div>
+                <div class="stay-submeta">Paid via ${method} · ${escHtml(b.property_name || 'Kaveri Stays')}</div>
+              </div>
+
+              <div class="stay-financials">
+                <div class="stay-total">Total: <strong>${formatCurrency(b.total_amount)}</strong></div>
+                <div class="stay-paid">Paid: ${formatCurrency(b.amount_paid)}</div>
+                ${due > 0 && b.status !== 'cancelled' 
+                  ? `<div class="stay-due-red">Due Balance: ${formatCurrency(due)}</div>` 
+                  : `<div class="stay-settled-green">Fully Settled ✓</div>`}
+              </div>
+            </div>
+
+            <div class="stay-actions">
+              ${b.status==='checked_in' ? `<button class="btn btn-secondary btn-sm" onclick="adminCheckOut(${b.booking_id})">Complete Checkout</button>` : `<button class="btn btn-secondary btn-sm" onclick="openBookingDetail(${b.booking_id})">View Details</button>`}
+              ${b.status==='confirmed' ? `<button class="btn btn-danger-outline btn-sm" onclick="cancelBooking(${b.booking_id})">Cancel Stay</button>` : ''}
+              ${b.status==='checked_out' ? `<button class="btn btn-success btn-sm" onclick="openReviewModal(${b.booking_id})">Leave Review ★</button>` : ''}
+              ${due > 0 && b.status !== 'cancelled' 
+                ? `<button class="btn btn-forest btn-sm" onclick="settleBalance(${b.booking_id}, ${due})">Settle Balance (${formatCurrency(due)}) →</button>` 
+                : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
     </div>`;
 }
+
+async function settleBalance(bookingId, dueAmount) {
+  const {ok, error} = await apiJSON(`/bookings/${bookingId}/payments`, {
+    method: 'POST',
+    body: JSON.stringify({ amount: dueAmount, method: 'card' })
+  });
+  if (!ok) {
+    showToast('Payment failed', error, 'error');
+    return;
+  }
+  showToast('Balance Settled! ✓', `Payment of ${formatCurrency(dueAmount)} recorded. Stay is fully paid.`, 'success');
+  await loadDashboard();
+}
+
 async function cancelBooking(id) {
   if(!confirm(`Cancel booking #${id}? Cannot be undone.`)) return;
   const {ok,error}=await apiJSON(`/bookings/${id}/cancel`,{method:'POST'});
@@ -1295,33 +1362,49 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
     };
     roomsCache[roomId] = roomData;
   }
-  activeBookingData={roomId,checkIn,checkOut,guests,roomData,nights};
-  // Resolve property name: try search-property dropdown first, then propertiesCache by room's data-prop
+  
+  const totalAmount = (roomData.nightly_rate || 4000) * nights;
+  const depositAmount = Math.round(totalAmount * 0.20);
+  const remainingBalance = totalAmount - depositAmount;
+  
+  activeBookingData={roomId,checkIn,checkOut,guests,roomData,nights,totalAmount,depositAmount,remainingBalance};
+  
   let propName = roomData.property_name || 'Kaveri Stays';
   const searchSel = document.getElementById('search-property') || document.getElementById('vac-property');
   if(searchSel && searchSel.value && searchSel.value !== "") {
     propName = propertiesCache?.find(p=>p.property_id==parseInt(searchSel.value))?.name || propName;
   }
   const maxOcc = roomData.max_occupancy || 6;
+  
   document.getElementById('booking-modal-body').innerHTML=`
-    <div class="booking-summary" style="margin-bottom:var(--space-5)">
-      <div style="margin-bottom:var(--space-4)">
-        <div class="text-xs text-muted">BOOKING SUMMARY</div>
-        <div class="heading-serif" style="font-size:1.2rem;color:var(--cream-50)">${escHtml(roomData.type_name)} Suite · Room ${escHtml(roomData.room_number)}</div>
-        <div class="text-sm text-muted">${escHtml(propName)}</div>
-      </div>
-      <div class="booking-summary-row"><span class="booking-summary-label">Check-in</span><span class="booking-summary-value">${formatDate(checkIn)}</span></div>
-      <div class="booking-summary-row"><span class="booking-summary-label">Check-out</span><span class="booking-summary-value">${formatDate(checkOut)}</span></div>
-      <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">${nights} night${nights!==1?'s':''}</span></div>
-      <div class="booking-summary-row"><span class="booking-summary-label">Nightly Rate</span><span class="booking-summary-value">${formatCurrency(roomData.nightly_rate)}</span></div>
-      <div class="booking-summary-total"><div class="booking-summary-total-label">Total</div><div class="booking-summary-total-amount">${formatCurrency(roomData.total_rate)}</div></div>
+    <div style="margin-bottom:var(--space-4)">
+      <div class="text-xs text-muted" style="letter-spacing:0.05em">ROOM SELECTION</div>
+      <div class="heading-serif" style="font-size:1.2rem;color:var(--cream-50)">${escHtml(roomData.type_name)} Suite · Room ${escHtml(roomData.room_number)}</div>
+      <div class="text-sm text-muted">${escHtml(propName)} · ${formatDate(checkIn)} → ${formatDate(checkOut)} (${nights} night${nights>1?'s':''})</div>
     </div>
-    <div class="form-group">
+
+    <!-- 20% Deposit Breakdown Card (Screenshot 2 Match) -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);">
+      <div class="booking-summary-row" style="margin-bottom:var(--space-2);">
+        <span style="color:var(--cream-100);font-size:0.95rem;">${formatCurrency(roomData.nightly_rate)} × ${nights} night${nights>1?'s':''}</span>
+        <span style="color:var(--cream-50);font-weight:600;font-size:0.95rem;">${formatCurrency(totalAmount)}</span>
+      </div>
+      <div class="booking-summary-row" style="margin-bottom:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);">
+        <span style="color:var(--gold-200);font-weight:700;font-size:1.05rem;">20% Deposit (Due Now)</span>
+        <span style="color:var(--gold-200);font-weight:800;font-size:1.15rem;">${formatCurrency(depositAmount)}</span>
+      </div>
+      <div class="booking-summary-row">
+        <span style="color:var(--charcoal-300);font-size:0.85rem;">Remaining Balance Due at Checkout</span>
+        <span style="color:var(--charcoal-300);font-size:0.85rem;">${formatCurrency(remainingBalance)}</span>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:var(--space-3);">
       <label class="form-label">Guests <span class="required">*</span></label>
       <select class="form-input" id="booking-guest-count">${Array.from({length:maxOcc},(_,i)=>i+1).map(n=>`<option value="${n}" ${n==Math.min(guests,maxOcc)?'selected':''}>${n} Guest${n>1?'s':''}</option>`).join('')}</select>
-      <div class="form-hint" style="color:var(--charcoal-300);font-size:0.78rem">Max ${maxOcc} guest${maxOcc>1?'s':''} for this room type</div>
     </div>
-    <div class="form-group">
+
+    <div class="form-group" style="margin-bottom:var(--space-4);">
       <label class="form-label">Payment Method <span class="required">*</span></label>
       <div class="payment-methods">
         ${[{value:'card',icon:'💳',label:'Card'},{value:'upi',icon:'📱',label:'UPI'},{value:'cash',icon:'💵',label:'Cash'},{value:'bank_transfer',icon:'🏦',label:'Bank'}].map(m=>`
@@ -1329,16 +1412,27 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
           <label class="payment-method-label" for="pm-${m.value}"><span class="payment-method-icon">${m.icon}</span>${m.label}</label></div>`).join('')}
       </div>
     </div>
-    <div style="background:rgba(212,137,31,0.08);border:1px solid rgba(212,137,31,0.2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:0.82rem;color:var(--gold-200)">
-      ✦ A 30% deposit is recorded upon confirmation. Balance due at check-in.
+
+    <div style="margin-bottom:var(--space-2);">
+      <button class="btn btn-forest w-full" id="confirm-booking-modal-btn" style="padding:14px;border-radius:var(--radius-full);font-size:1rem;" onclick="confirmBooking()">
+        Hold Room with ${formatCurrency(depositAmount)} Deposit
+      </button>
+    </div>
+    <div style="text-align:center;font-size:0.78rem;color:var(--charcoal-300);margin-top:var(--space-2);">
+      Free cancellation available up to 48 hours prior to check-in.
     </div>`;
+
+  // Hide the default modal footer button since we have the full-width CTA inside the body
+  const modalFooter = document.querySelector('#booking-modal-overlay .modal-footer');
+  if (modalFooter) modalFooter.style.display = 'none';
+
   document.getElementById('booking-modal-overlay').classList.add('active');
 }
 function closeBookingModal() { document.getElementById('booking-modal-overlay').classList.remove('active'); activeBookingData=null; }
 
 async function confirmBooking() {
   if(!activeBookingData) return;
-  const btn=document.getElementById('confirm-booking-btn');
+  const btn=document.getElementById('confirm-booking-modal-btn') || document.getElementById('confirm-booking-btn');
   const {roomId,checkIn,checkOut,roomData}=activeBookingData;
   const guestCount=parseInt(document.getElementById('booking-guest-count').value);
   const method=document.querySelector('input[name="payment-method"]:checked')?.value||'card';
@@ -1348,33 +1442,36 @@ async function confirmBooking() {
     showToast('Too many guests',`This room type allows a maximum of ${maxOcc} guest${maxOcc>1?'s':''}.`,'error');
     return;
   }
-  setLoading(btn,true,'Confirming…');
+  if(btn) setLoading(btn,true,'Securing Stay…');
   const {ok,data,error}=await apiJSON('/bookings',{method:'POST',body:JSON.stringify({room_id:roomId,check_in:checkIn,check_out:checkOut,guest_count:guestCount,payment_method:method})});
-  setLoading(btn,false);
+  if(btn) setLoading(btn,false);
   if(!ok){showToast('Booking failed',error,'error');return;}
   closeBookingModal();
-  showBookingSuccess(data);
+  showBookingSuccess(data, activeBookingData.nights);
   showToast('Booking confirmed! 🎉',`Booking #${data.booking_id} created.`,'success');
 }
 
-function showBookingSuccess(booking) {
+function showBookingSuccess(booking, nights=null) {
+  const n = nights || Math.max(1, nightsBetween(booking.check_in, booking.check_out));
+  const paid = booking.amount_paid || Math.round(booking.total_amount * 0.20);
+  
   document.getElementById('success-modal-body').innerHTML=`
     <div style="text-align:center;padding:var(--space-4) 0">
-      <div class="success-checkmark">✓</div>
-      <h3 class="heading-serif" style="font-size:1.8rem;color:var(--cream-50);margin-bottom:var(--space-2)">Booking Confirmed!</h3>
-      <p class="text-sm text-muted" style="margin-bottom:var(--space-6)">Your stay has been reserved. We look forward to welcoming you!</p>
-      <div class="booking-summary" style="text-align:left">
-        <div class="booking-summary-row"><span class="booking-summary-label">Booking ID</span><span class="booking-summary-value">#${booking.booking_id}</span></div>
-        <div class="booking-summary-row"><span class="booking-summary-label">Property</span><span class="booking-summary-value">${escHtml(booking.property_name)}</span></div>
-        <div class="booking-summary-row"><span class="booking-summary-label">Room</span><span class="booking-summary-value">${escHtml(booking.room_number)}</span></div>
-        <div class="booking-summary-row"><span class="booking-summary-label">Check-in</span><span class="booking-summary-value">${formatDate(booking.check_in)}</span></div>
-        <div class="booking-summary-row"><span class="booking-summary-label">Check-out</span><span class="booking-summary-value">${formatDate(booking.check_out)}</span></div>
-        <div class="booking-summary-row"><span class="booking-summary-label">Status</span><span class="booking-summary-value">${statusBadge(booking.status)}</span></div>
-        <div class="booking-summary-total"><div class="booking-summary-total-label">Total</div><div class="booking-summary-total-amount">${formatCurrency(booking.total_amount)}</div></div>
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(72,187,120,0.15);border:1.5px solid #48bb78;color:#48bb78;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto var(--space-3);">✓</div>
+      <div style="display:inline-block;padding:4px 12px;background:rgba(72,187,120,0.12);border:1px solid rgba(72,187,120,0.3);border-radius:var(--radius-full);color:#68d391;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;margin-bottom:var(--space-2);">RESERVATION CONFIRMED</div>
+      <h3 class="heading-serif" style="font-size:1.8rem;color:var(--cream-50);margin-bottom:4px">Your Stay is Secured</h3>
+      <p class="text-xs text-muted" style="margin-bottom:var(--space-5)">Booking reference: #${booking.booking_id} · Status: <strong style="color:var(--forest-300)">${booking.status}</strong></p>
+      
+      <!-- Summary Box (Screenshot 3 Match) -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);text-align:left;margin-bottom:var(--space-6);">
+        <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">${n} Night${n>1?'s':''}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Total Stay Cost</span><span class="booking-summary-value" style="color:var(--cream-50);font-weight:700;">${formatCurrency(booking.total_amount)}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span style="color:#68d391;font-weight:700;">20% Deposit Paid</span><span style="color:#68d391;font-weight:800;font-size:1.1rem;">${formatCurrency(paid)}</span></div>
       </div>
-      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
-        <button class="btn btn-secondary w-full" onclick="closeSuccessModal()">Back to Home</button>
-        <button class="btn btn-primary w-full" onclick="closeSuccessModal();navigateTo('dashboard')">View My Bookings</button>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+        <button class="btn btn-forest w-full" style="padding:14px;border-radius:var(--radius-full);font-size:0.95rem;" onclick="closeSuccessModal();navigateTo('dashboard')">View All My Reservations</button>
+        <button class="btn btn-outline w-full" style="padding:12px;border-radius:var(--radius-full);font-size:0.9rem;" onclick="closeSuccessModal();navigateTo('home')">Return to Homepage</button>
       </div>
     </div>`;
   document.getElementById('success-modal-overlay').classList.add('active');
@@ -1604,7 +1701,9 @@ Object.assign(window, {
   openPropertyModal,
   closePropertyModal,
   toggleUserDropdown,
-  closeUserDropdown
+  closeUserDropdown,
+  settleBalance,
+  setDashboardFilter
 });
 
 /* ─────────────────────────────────────────────────────────────────────────

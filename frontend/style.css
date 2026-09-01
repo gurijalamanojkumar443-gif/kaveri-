@@ -1566,6 +1566,182 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Stay Cards & Payment Deposit Styles ────────────────────────────────── */
+.stay-card {
+  background: rgba(22, 33, 62, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  transition: all var(--transition-normal);
+}
+.stay-card:hover {
+  border-color: rgba(212, 137, 31, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.stay-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.stay-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-300);
+}
+.stay-card-badge {
+  background: rgba(212, 137, 31, 0.12);
+  border: 1px solid rgba(212, 137, 31, 0.3);
+  color: var(--gold-300);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-2);
+}
+
+.stay-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.stay-dates-group {
+  display: flex;
+  gap: var(--space-3);
+}
+.stay-date-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  min-width: 100px;
+}
+.stay-date-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-300);
+  margin-bottom: 2px;
+}
+.stay-date-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cream-50);
+}
+
+.stay-meta {
+  font-size: 0.85rem;
+  color: var(--cream-100);
+}
+.stay-submeta {
+  font-size: 0.75rem;
+  color: var(--charcoal-300);
+  margin-top: 2px;
+}
+
+.stay-financials {
+  text-align: right;
+}
+.stay-total {
+  font-size: 0.82rem;
+  color: var(--charcoal-300);
+}
+.stay-paid {
+  font-size: 0.82rem;
+  color: var(--charcoal-300);
+}
+.stay-due-red {
+  color: #fc8181;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+.stay-settled-green {
+  color: #68d391;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+
+.stay-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-forest {
+  background: #154734 !important;
+  color: #ffffff !important;
+  border: 1px solid #1f6b4e !important;
+  font-weight: 600 !important;
+  transition: all var(--transition-fast) !important;
+}
+.btn-forest:hover {
+  background: #1b5941 !important;
+  box-shadow: 0 4px 14px rgba(21, 71, 52, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+.btn-danger-outline {
+  background: transparent !important;
+  border: 1px solid rgba(229, 62, 62, 0.4) !important;
+  color: #feb2b2 !important;
+  font-size: 0.82rem !important;
+}
+.btn-danger-outline:hover {
+  background: rgba(229, 62, 62, 0.15) !important;
+  border-color: #fc8181 !important;
+}
+
+/* Filter pills */
+.filter-pills-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+.filter-pill {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+  color: var(--charcoal-300);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-pill.active {
+  background: rgba(212, 137, 31, 0.18);
+  border-color: var(--gold-400);
+  color: var(--cream-50);
+  font-weight: 600;
+}
+.filter-pill-count {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+}
+.filter-pill.active .filter-pill-count {
+  background: var(--gold-400);
+  color: #000;
+  font-weight: 700;
+}
+
+
 
 
 
