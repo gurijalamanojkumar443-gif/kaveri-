@@ -227,7 +227,14 @@ registerPage('home', async (container) => {
       <div class="container">
         <div class="section-header"><div class="section-eyebrow">The Kaveri Difference</div><h2 class="section-title">Luxury Redefined</h2></div>
         <div class="features-grid">
-          ${[{icon:'🌿',title:'Immersive Nature',desc:'Designed to harmonize with coffee plantations, tea estates, and backwaters.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🍽️',title:'Farm-to-Table Dining',desc:'Hyper-local cuisines crafted from estate-grown produce.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🧖',title:'Signature Spa',desc:'Ancient Ayurvedic therapies and modern wellness rituals.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'🔒',title:'Private & Secure',desc:'Exclusive access policies ensure your privacy.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"},{icon:'⚡',title:'Instant Booking',desc:'Real-time availability with atomic reservation confirmation.',action:"document.querySelector('.search-bar')?.scrollIntoView({behavior:'smooth'})"},{icon:'💎',title:'Curated Experiences',desc:'Wildlife safaris, stargazing, and backwater cruises.',action:"document.getElementById('properties-section')?.scrollIntoView({behavior:'smooth'})"}].map(f=>`<div class="feature-card" style="cursor:pointer;" onclick="${f.action}"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p></div>`).join('')}
+          ${[
+            {icon:'🌿',title:'Immersive Nature',desc:'Designed to harmonize with coffee plantations, tea estates, and backwaters.',key:'safaris'},
+            {icon:'🍽️',title:'Farm-to-Table Dining',desc:'Hyper-local cuisines crafted from estate-grown produce.',key:'tea'},
+            {icon:'🧖',title:'Signature Spa',desc:'Ancient Ayurvedic therapies and modern wellness rituals.',key:'spa'},
+            {icon:'🔒',title:'Private & Secure',desc:'Exclusive access policies ensure your privacy.',key:'cancellation'},
+            {icon:'⚡',title:'Instant Booking',desc:'Real-time availability with atomic reservation confirmation.',key:'contact'},
+            {icon:'💎',title:'Curated Experiences',desc:'Wildlife safaris, stargazing, and backwater cruises.',key:'cruise'}
+          ].map(f=>`<div class="feature-card" style="cursor:pointer;" onclick="openInfoModal('${f.key}')"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p><div style="font-size:0.75rem;color:var(--gold-300);margin-top:var(--space-2);font-weight:600;">Learn More →</div></div>`).join('')}
         </div>
       </div>
     </section>`;
@@ -260,6 +267,112 @@ registerPage('home', async (container) => {
   document.getElementById('search-guests').addEventListener('change', ()=>searchAvailability());
 });
 
+/* ─── Property Details Modal & Data ─────────────────────────────────────── */
+const PROPERTY_MODAL_DATA = {
+  1: {
+    name: 'Kaveri Riverside',
+    city: 'Coorg, Karnataka',
+    stars: 4,
+    bg: 'linear-gradient(135deg,#0d3f23 0%,#1e5f39 50%,#0d3f23 100%)',
+    emoji: '🌲',
+    tagline: 'Misty mornings amidst 45 acres of organic coffee & spice plantations along the Cauvery River.',
+    desc: 'Secluded riverfront villas nestled under canopy trees. Features private infinity plunge pools, riverside dining with authentic Kodava farm-to-table delicacies, guided wildlife trails, and an Ayurvedic forest spa.',
+    amenities: ['🏊 Riverfront Pool', '☕ Coffee Trail Tour', '🍽️ Kodava Dining', '🧖 Forest Spa', '🐅 Wildlife Safaris', '📶 High-Speed Wi-Fi', '🚗 Private Valet'],
+    roomTypes: [
+      { name: 'Standard Room', price: '₹2,500', cap: '2 Guests', desc: 'Serene estate-view room with private balcony.' },
+      { name: 'Deluxe Suite', price: '₹4,000', cap: '3 Guests', desc: 'Valley-facing luxury suite with plush king bedding.' },
+      { name: 'Presidential River Suite', price: '₹6,500', cap: '4 Guests', desc: 'Private riverfront villa with plunge pool & personal butler.' }
+    ]
+  },
+  2: {
+    name: 'Kaveri Hilltop',
+    city: 'Ooty, Tamil Nadu',
+    stars: 5,
+    bg: 'linear-gradient(135deg,#1a2a1a 0%,#3a5c2a 50%,#1a2a1a 100%)',
+    emoji: '🍃',
+    tagline: 'Colonial luxury perched at 7,200 feet amidst eucalyptus groves and fragrant tea valleys.',
+    desc: 'Experience Victorian open fireplaces, organic tea garden tours, and stargazing decks overlooking the Nilgiri range. Offers bespoke wellness rituals and afternoon high tea in heritage gardens.',
+    amenities: ['🏔️ Nilgiri Cloud Deck', '🍃 Organic Tea Tasting', '🔥 Open Fireplace', '🧖 Ayurvedic Spa', '🎾 Lawn Tennis', '🔭 Stargazing Deck', '🍽️ High Tea Lounge'],
+    roomTypes: [
+      { name: 'Standard Room', price: '₹3,000', cap: '2 Guests', desc: 'Colonial heritage room with garden view and fireplace.' },
+      { name: 'Deluxe Panorama', price: '₹5,000', cap: '3 Guests', desc: 'Valley panorama room with private heating and jacuzzi.' },
+      { name: 'Heritage Grand Suite', price: '₹8,000', cap: '4 Guests', desc: 'Grand two-room suite with 360-degree mountain views.' }
+    ]
+  },
+  3: {
+    name: 'Kaveri Backwater',
+    city: 'Alleppey, Kerala',
+    stars: 4,
+    bg: 'linear-gradient(135deg,#0a2040 0%,#1a4060 50%,#0a2040 100%)',
+    emoji: '🌊',
+    tagline: 'Kerala’s soul on our exclusive retreat surrounded by emerald backwater lagoons and coconut groves.',
+    desc: 'Surrounded by tranquil lagoons, Kaveri Backwater offers handcrafted cedar houseboats, sunset lagoon cruises with classical music, fresh coastal seafood dining, and sunrise yoga on private wooden decks.',
+    amenities: ['⛵ Private Houseboat', '🥥 Coconut Grove Villas', '🎣 Lagoon Fishing', '🧘 Daily Sunrise Yoga', '🧖 Herbal Steam Spa', '🍽️ Coastal Seafood', '🛶 Kayaking'],
+    roomTypes: [
+      { name: 'Standard Room', price: '₹2,800', cap: '2 Guests', desc: 'Lagoon view room with private wooden sit-out.' },
+      { name: 'Deluxe Cottage', price: '₹4,500', cap: '3 Guests', desc: 'Traditional Kerala cottage with open-air rainfall shower.' },
+      { name: 'Houseboat Floating Suite', price: '₹7,000', cap: '4 Guests', desc: 'Luxury floating suite with private sundeck and personal chef.' }
+    ]
+  }
+};
+
+function openPropertyModal(propId) {
+  const p = PROPERTY_MODAL_DATA[propId] || PROPERTY_MODAL_DATA[1];
+  document.getElementById('property-modal-title').textContent = p.name;
+  document.getElementById('property-modal-body').innerHTML = `
+    <div style="background:${p.bg};border-radius:var(--radius-lg);padding:var(--space-6);text-align:center;font-size:4.5rem;margin-bottom:var(--space-4);position:relative;">
+      ${p.emoji}
+      <div style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);padding:4px 10px;border-radius:var(--radius-full);font-size:0.8rem;color:var(--gold-200);border:1px solid rgba(212,137,31,0.3);">
+        ${starsHTML(p.stars)} · ${escHtml(p.city)}
+      </div>
+    </div>
+    <div style="margin-bottom:var(--space-4);">
+      <h3 style="font-family:var(--font-display);font-size:1.4rem;color:var(--cream-50);margin-bottom:4px;">${escHtml(p.name)}</h3>
+      <p style="font-style:italic;color:var(--gold-200);font-size:0.9rem;margin-bottom:var(--space-3);">${escHtml(p.tagline)}</p>
+      <p style="color:var(--cream-100);font-size:0.9rem;line-height:1.6;margin-bottom:var(--space-4);">${escHtml(p.desc)}</p>
+    </div>
+    
+    <div style="margin-bottom:var(--space-5);">
+      <div class="section-eyebrow" style="margin-bottom:var(--space-2);">Signature Amenities</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${p.amenities.map(a => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:4px 10px;border-radius:var(--radius-full);font-size:0.78rem;color:var(--cream-100);">${a}</span>`).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow" style="margin-bottom:var(--space-2);">Available Room Suites</div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-2);">
+        ${p.roomTypes.map(rt => `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+            <div>
+              <div style="font-weight:600;color:var(--cream-50);font-size:0.95rem;">${rt.name}</div>
+              <div style="font-size:0.78rem;color:var(--charcoal-300);">${rt.desc} · <strong style="color:var(--gold-300)">${rt.cap}</strong></div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--font-display);font-weight:700;color:var(--gold-200);font-size:1.1rem;">${rt.price}</div>
+              <button class="btn btn-primary btn-sm" style="margin-top:4px;" onclick="closePropertyModal();viewProperty(${propId})">Book Room →</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  const actionBtn = document.getElementById('property-modal-action-btn');
+  if (actionBtn) {
+    actionBtn.onclick = () => {
+      closePropertyModal();
+      viewProperty(propId);
+    };
+  }
+
+  document.getElementById('property-modal-overlay')?.classList.add('active');
+}
+
+function closePropertyModal() {
+  document.getElementById('property-modal-overlay')?.classList.remove('active');
+}
+
 /* ─── Load Properties ─────────────────────────────────────────────────── */
 let propertiesCache = null;
 async function loadProperties() {
@@ -282,7 +395,7 @@ async function loadProperties() {
     'Alleppey':"Kerala's soul on our exclusive retreat surrounded by emerald backwater lagoons.",
   };
   grid.innerHTML = data.map((p,i)=>`
-    <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}" onclick="viewProperty(${p.property_id})" style="cursor:pointer;">
+    <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}" onclick="openPropertyModal(${p.property_id})" style="cursor:pointer;">
       <div class="property-card-img-wrapper" style="background:${bgs[i%3]};display:flex;align-items:center;justify-content:center;font-size:5rem;cursor:pointer;">
         ${emojis[i%3]}
         <span class="property-card-badge">${escHtml(p.city)}</span>
@@ -294,7 +407,7 @@ async function loadProperties() {
         <div class="property-card-description" id="prop-desc-${p.property_id}">Loading…</div>
         <div class="property-card-footer">
           <div class="property-room-types" id="prop-rooms-${p.property_id}"></div>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();viewProperty(${p.property_id})">Explore →</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">Explore ✦</button>
         </div>
       </div>
     </div>`).join('');
@@ -304,7 +417,7 @@ async function loadProperties() {
       const de=document.getElementById(`prop-desc-${p.property_id}`);
       const re=document.getElementById(`prop-rooms-${p.property_id}`);
       if(de) de.textContent=descs[p.city]||`A luxury property in ${p.city}.`;
-      if(re&&det.room_types) re.innerHTML=det.room_types.map(rt=>`<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();viewProperty(${p.property_id},${rt.room_type_id||rt.type_id})">${escHtml(rt.type_name)}</span>`).join('');
+      if(re&&det.room_types) re.innerHTML=det.room_types.map(rt=>`<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.type_name)}</span>`).join('');
     }
   }
 }
@@ -1493,6 +1606,8 @@ Object.assign(window, {
   loadAdminTab,
   openInfoModal,
   closeInfoModal,
+  openPropertyModal,
+  closePropertyModal,
   toggleUserDropdown,
   closeUserDropdown
 });
@@ -1536,6 +1651,9 @@ function initApp() {
   document.getElementById('success-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeSuccessModal();});
   document.getElementById('detail-modal-close')?.addEventListener('click',closeDetailModal);
   document.getElementById('detail-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeDetailModal();});
+
+  // Property modal overlay click
+  document.getElementById('property-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closePropertyModal();});
 
   // Info modal overlay click
   document.getElementById('info-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeInfoModal();});

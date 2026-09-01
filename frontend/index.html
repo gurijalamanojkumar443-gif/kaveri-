@@ -238,6 +238,21 @@
     </div>
   </div>
 
+  <!-- PROPERTY DETAILS MODAL -->
+  <div class="modal-overlay" id="property-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="property-modal-title">
+    <div class="modal" style="max-width:680px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="property-modal-title">Property Details</h2>
+        <button class="modal-close" id="property-modal-close" onclick="closePropertyModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="property-modal-body"></div>
+      <div class="modal-footer" id="property-modal-footer">
+        <button class="btn btn-secondary" onclick="closePropertyModal()">Close</button>
+        <button class="btn btn-primary" id="property-modal-action-btn">Explore Available Rooms ✦</button>
+      </div>
+    </div>
+  </div>
+
   <!-- INFO & EXPERIENCES MODAL -->
   <div class="modal-overlay" id="info-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
     <div class="modal" style="max-width:560px;">
