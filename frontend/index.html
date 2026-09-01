@@ -12,6 +12,26 @@
 </head>
 <body>
 
+  <!-- ORANGE ROCKET CURSOR & SPARK TRAIL -->
+  <div class="rocket-cursor" id="rocket-cursor">
+    <svg class="rocket-icon" viewBox="0 0 24 24" width="24" height="24" fill="none">
+      <path d="M12 2C12 2 16 6 16 11.5C16 14.5 14.8 16.5 14.8 16.5L12 15L9.2 16.5C9.2 16.5 8 14.5 8 11.5C8 6 12 2 12 2Z" fill="url(#rocketGrad)" />
+      <path d="M9.2 16.5L6.5 19V15.8L8.2 14.2" fill="#e63900" />
+      <path d="M14.8 16.5L17.5 19V15.8L15.8 14.2" fill="#e63900" />
+      <circle cx="12" cy="8.5" r="1.8" fill="#ffffff" />
+      <circle cx="12" cy="8.5" r="1" fill="#0f172a" />
+      <path class="rocket-flame" d="M10.8 15.5L12 20.5L13.2 15.5Z" fill="#ffb703" />
+      <defs>
+        <linearGradient id="rocketGrad" x1="12" y1="2" x2="12" y2="17" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ffaa00" />
+          <stop offset="0.6" stop-color="#ff5500" />
+          <stop offset="1" stop-color="#cc2900" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <canvas id="rocket-trail-canvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:999998;"></canvas>
+
   <!-- NAVIGATION -->
   <nav class="navbar" id="main-navbar" role="navigation" aria-label="Main Navigation">
     <div class="container navbar-inner">

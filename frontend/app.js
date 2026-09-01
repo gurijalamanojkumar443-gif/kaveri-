@@ -1899,8 +1899,173 @@ function initApp() {
   updateHamburgerVisibility();
   window.addEventListener('resize', updateHamburgerVisibility, {passive:true});
 
+  initRocketCursor();
   updateNavForAuthState();
   navigateTo('home');
+}
+
+/* ─── Orange Rocket Cursor & Thruster Star Trail ─────────────────────────── */
+function initRocketCursor() {
+  const rocket = document.getElementById('rocket-cursor');
+  const canvas = document.getElementById('rocket-trail-canvas');
+  if (!rocket || !canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }, { passive: true });
+
+  const particles = [];
+  const colors = ['#ff9a3c', '#ff5500', '#ff2200', '#ffc233', '#ffffff'];
+
+  function spawnParticle(x, y, isBurst = false) {
+    const count = isBurst ? 12 : 2;
+    for (let i = 0; i < count; i++) {
+      const angle = isBurst ? Math.random() * Math.PI * 2 : (Math.PI / 4) + (Math.random() * 0.8 - 0.4);
+      const speed = isBurst ? Math.random() * 3.5 + 1.2 : Math.random() * 1.6 + 0.6;
+      particles.push({
+        x: x + (Math.random() * 4 - 2),
+        y: y + (Math.random() * 4 - 2),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: isBurst ? Math.random() * 4 + 2 : Math.random() * 3 + 1.5,
+        alpha: 1,
+        decay: isBurst ? 0.03 : 0.045 + Math.random() * 0.02,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        isStar: Math.random() > 0.45
+      });
+    }
+  }
+
+  function drawStar(cx, cy, spikes, outerRadius, innerRadius, color, alpha) {
+    let rot = (Math.PI / 2) * 3;
+    let x = cx;
+    let y = cy;
+    const step = Math.PI / spikes;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * outerRadius;
+      y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  let mouseX = -100, mouseY = -100;
+  let prevX = -100, prevY = -100;
+  let isAnimating = false;
+
+  function renderParticles() {
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= p.decay;
+      p.size = Math.max(0, p.size - 0.04);
+
+      if (p.alpha <= 0 || p.size <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+
+      if (p.isStar) {
+        drawStar(p.x, p.y, 4, p.size * 1.5, p.size * 0.6, p.color, p.alpha);
+      } else {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (particles.length > 0) {
+      requestAnimationFrame(renderParticles);
+    } else {
+      isAnimating = false;
+    }
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    rocket.style.left = `${mouseX}px`;
+    rocket.style.top = `${mouseY}px`;
+    rocket.classList.remove('hidden');
+
+    const dist = Math.hypot(mouseX - prevX, mouseY - prevY);
+    if (dist > 4) {
+      spawnParticle(mouseX + 10, mouseY + 10);
+      prevX = mouseX;
+      prevY = mouseY;
+    }
+
+    if (!isAnimating && particles.length > 0) {
+      isAnimating = true;
+      requestAnimationFrame(renderParticles);
+    }
+  }, { passive: true });
+
+  const interactiveSelectors = 'a, button, [role="button"], [onclick], .property-card, .room-card, .feature-card, .nav-link, .star-btn, .room-type-chip, .footer-link, .modal-close, .logo, .demo-cred-btn, .payment-method-label, .filter-pill, .stay-card';
+  const inputSelectors = 'input, textarea, select';
+
+  document.addEventListener('mouseover', (e) => {
+    if (e.target.closest(interactiveSelectors)) {
+      document.body.classList.add('cursor-hover');
+    }
+    if (e.target.closest(inputSelectors)) {
+      document.body.classList.add('cursor-typing');
+    }
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    if (e.target.closest(interactiveSelectors)) {
+      document.body.classList.remove('cursor-hover');
+    }
+    if (e.target.closest(inputSelectors)) {
+      document.body.classList.remove('cursor-typing');
+    }
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    document.body.classList.add('cursor-active');
+    spawnParticle(e.clientX, e.clientY, true);
+    if (!isAnimating) {
+      isAnimating = true;
+      requestAnimationFrame(renderParticles);
+    }
+  });
+  document.addEventListener('mouseup', () => document.body.classList.remove('cursor-active'));
+
+  document.addEventListener('mouseleave', () => rocket.classList.add('hidden'));
+  document.addEventListener('mouseenter', () => rocket.classList.remove('hidden'));
 }
 
 if (document.readyState === 'loading') {
@@ -1908,6 +2073,7 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
 
 
 
