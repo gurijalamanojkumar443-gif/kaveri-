@@ -1697,8 +1697,74 @@ function initApp() {
   updateHamburgerVisibility();
   window.addEventListener('resize', updateHamburgerVisibility, {passive:true});
 
+  initCustomCursor();
   updateNavForAuthState();
   navigateTo('home');
+}
+
+/* ─── Custom Luxury Cursor Controller ────────────────────────────────────── */
+function initCustomCursor() {
+  const dot = document.getElementById('custom-cursor');
+  const follower = document.getElementById('custom-cursor-follower');
+  if (!dot || !follower) return;
+
+  let mouseX = -100, mouseY = -100;
+  let followerX = -100, followerY = -100;
+  let isMoving = false;
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.style.left = `${mouseX}px`;
+    dot.style.top = `${mouseY}px`;
+    dot.classList.remove('hidden');
+    follower.classList.remove('hidden');
+
+    if (!isMoving) {
+      isMoving = true;
+      requestAnimationFrame(renderFollower);
+    }
+  }, { passive: true });
+
+  function renderFollower() {
+    followerX += (mouseX - followerX) * 0.18;
+    followerY += (mouseY - followerY) * 0.18;
+    follower.style.left = `${followerX}px`;
+    follower.style.top = `${followerY}px`;
+
+    const dist = Math.hypot(mouseX - followerX, mouseY - followerY);
+    if (dist > 0.1) {
+      requestAnimationFrame(renderFollower);
+    } else {
+      isMoving = false;
+    }
+  }
+
+  const interactiveSelectors = 'a, button, [role="button"], [onclick], .property-card, .room-card, .feature-card, .nav-link, .star-btn, .room-type-chip, input, select, textarea, .footer-link, .modal-close, .logo, .demo-cred-btn, .payment-method-label';
+
+  document.addEventListener('mouseover', (e) => {
+    if (e.target.closest(interactiveSelectors)) {
+      document.body.classList.add('cursor-hover');
+    }
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    if (e.target.closest(interactiveSelectors)) {
+      document.body.classList.remove('cursor-hover');
+    }
+  });
+
+  document.addEventListener('mousedown', () => document.body.classList.add('cursor-active'));
+  document.addEventListener('mouseup', () => document.body.classList.remove('cursor-active'));
+
+  document.addEventListener('mouseleave', () => {
+    dot.classList.add('hidden');
+    follower.classList.add('hidden');
+  });
+  document.addEventListener('mouseenter', () => {
+    dot.classList.remove('hidden');
+    follower.classList.remove('hidden');
+  });
 }
 
 if (document.readyState === 'loading') {
@@ -1706,5 +1772,6 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
 
 

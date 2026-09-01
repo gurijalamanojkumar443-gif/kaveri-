@@ -1566,3 +1566,78 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Custom Luxury Cursor ───────────────────────────────────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    cursor: none !important;
+  }
+  
+  .custom-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    background-color: var(--gold-300);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease;
+    box-shadow: 0 0 10px rgba(233, 168, 58, 0.8), 0 0 20px rgba(212, 137, 31, 0.4);
+  }
+
+  .custom-cursor-follower {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid rgba(233, 168, 58, 0.5);
+    background: radial-gradient(circle, rgba(233, 168, 58, 0.12) 0%, rgba(233, 168, 58, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%, -50%);
+    transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1), height 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+  }
+
+  /* Hover Expansion on Clickables */
+  body.cursor-hover .custom-cursor {
+    width: 12px;
+    height: 12px;
+    background-color: var(--gold-200);
+    box-shadow: 0 0 16px rgba(241, 202, 109, 1);
+  }
+
+  body.cursor-hover .custom-cursor-follower {
+    width: 54px;
+    height: 54px;
+    border-color: rgba(241, 202, 109, 0.9);
+    background: radial-gradient(circle, rgba(233, 168, 58, 0.25) 0%, rgba(233, 168, 58, 0.05) 70%);
+    backdrop-filter: blur(1px);
+  }
+
+  /* Click Active Shrink/Pulse */
+  body.cursor-active .custom-cursor {
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  body.cursor-active .custom-cursor-follower {
+    transform: translate(-50%, -50%) scale(0.85);
+    border-color: var(--gold-400);
+  }
+
+  .custom-cursor.hidden,
+  .custom-cursor-follower.hidden {
+    opacity: 0;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .custom-cursor,
+  .custom-cursor-follower {
+    display: none !important;
+  }
+}
+
+
