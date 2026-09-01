@@ -1503,41 +1503,64 @@ function closeBookingModal() { document.getElementById('booking-modal-overlay').
 
 async function confirmBooking() {
   if(!activeBookingData) return;
-  const btn=document.getElementById('confirm-booking-modal-btn') || document.getElementById('confirm-booking-btn');
-  const {roomId,checkIn,checkOut,roomData}=activeBookingData;
-  const guestCount=parseInt(document.getElementById('booking-guest-count').value);
-  const method=document.querySelector('input[name="payment-method"]:checked')?.value||'card';
+  const snapshot = activeBookingData; // Keep reference before closing modal
+  const btn = document.getElementById('confirm-booking-modal-btn') || document.getElementById('confirm-booking-btn');
+  const {roomId, checkIn, checkOut, roomData, nights} = snapshot;
+  const guestCount = parseInt(document.getElementById('booking-guest-count')?.value || '1');
+  const method = document.querySelector('input[name="payment-method"]:checked')?.value || 'card';
+  
   // Validate guest count against room capacity
   const maxOcc = roomData?.max_occupancy || 99;
   if(guestCount > maxOcc){
-    showToast('Too many guests',`This room type allows a maximum of ${maxOcc} guest${maxOcc>1?'s':''}.`,'error');
+    showToast('Too many guests', `This room type allows a maximum of ${maxOcc} guest${maxOcc>1?'s':''}.`, 'error');
     return;
   }
-  if(btn) setLoading(btn,true,'Securing Stay…');
-  const {ok,data,error}=await apiJSON('/bookings',{method:'POST',body:JSON.stringify({room_id:roomId,check_in:checkIn,check_out:checkOut,guest_count:guestCount,payment_method:method})});
-  if(btn) setLoading(btn,false);
-  if(!ok){showToast('Booking failed',error,'error');return;}
+  
+  if(btn) setLoading(btn, true, 'Securing Stay…');
+  const {ok, data, error} = await apiJSON('/bookings', {
+    method: 'POST',
+    body: JSON.stringify({
+      room_id: roomId,
+      check_in: checkIn,
+      check_out: checkOut,
+      guest_count: guestCount,
+      payment_method: method
+    })
+  });
+  if(btn) setLoading(btn, false);
+  
+  if(!ok){
+    showToast('Booking failed', error, 'error');
+    return;
+  }
+  
   closeBookingModal();
-  showBookingSuccess(data, activeBookingData.nights);
-  showToast('Booking confirmed! 🎉',`Booking #${data.booking_id} created.`,'success');
+  showBookingSuccess(data, nights, '20% Deposit Paid');
+  showToast('Booking confirmed! 🎉', `Booking #${data.booking_id} created.`, 'success');
 }
 
-function showBookingSuccess(booking, nights=null) {
-  const n = nights || Math.max(1, nightsBetween(booking.check_in, booking.check_out));
-  const paid = booking.amount_paid || Math.round(booking.total_amount * 0.20);
+function showBookingSuccess(booking, nights=null, paymentLabel=null) {
+  if (!booking) return;
+  const n = nights || (booking.check_in && booking.check_out ? Math.max(1, nightsBetween(booking.check_in, booking.check_out)) : 1);
+  const paid = booking.amount_paid || Math.round((booking.total_amount || 0) * 0.20);
+  const label = paymentLabel || '20% Deposit Paid';
   
-  document.getElementById('success-modal-body').innerHTML=`
-    <div style="text-align:center;padding:var(--space-4) 0">
-      <div style="width:52px;height:52px;border-radius:50%;background:rgba(72,187,120,0.15);border:1.5px solid #48bb78;color:#48bb78;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto var(--space-3);">✓</div>
-      <div style="display:inline-block;padding:4px 12px;background:rgba(72,187,120,0.12);border:1px solid rgba(72,187,120,0.3);border-radius:var(--radius-full);color:#68d391;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;margin-bottom:var(--space-2);">RESERVATION CONFIRMED</div>
+  const successModal = document.getElementById('success-modal-overlay');
+  const successBody = document.getElementById('success-modal-body');
+  if (!successModal || !successBody) return;
+  
+  successBody.innerHTML = `
+    <div style="text-align:center;padding:var(--space-2) 0 var(--space-4);">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(72,187,120,0.15);border:2px solid #48bb78;color:#48bb78;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto var(--space-3);">✓</div>
+      <div style="display:inline-block;padding:4px 14px;background:rgba(72,187,120,0.12);border:1px solid rgba(72,187,120,0.3);border-radius:var(--radius-full);color:#68d391;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;margin-bottom:var(--space-2);">RESERVATION CONFIRMED</div>
       <h3 class="heading-serif" style="font-size:1.8rem;color:var(--cream-50);margin-bottom:4px">Your Stay is Secured</h3>
-      <p class="text-xs text-muted" style="margin-bottom:var(--space-5)">Booking reference: #${booking.booking_id} · Status: <strong style="color:var(--forest-300)">${booking.status}</strong></p>
+      <p class="text-xs text-muted" style="margin-bottom:var(--space-5)">Booking reference: #${booking.booking_id} · Status: <strong style="color:var(--forest-300)">${booking.status || 'confirmed'}</strong></p>
       
-      <!-- Summary Box (Screenshot 3 Match) -->
+      <!-- Summary Box (Exact Screenshot Match) -->
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);text-align:left;margin-bottom:var(--space-6);">
         <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">${n} Night${n>1?'s':''}</span></div>
         <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Total Stay Cost</span><span class="booking-summary-value" style="color:var(--cream-50);font-weight:700;">${formatCurrency(booking.total_amount)}</span></div>
-        <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span style="color:#68d391;font-weight:700;">20% Deposit Paid</span><span style="color:#68d391;font-weight:800;font-size:1.1rem;">${formatCurrency(paid)}</span></div>
+        <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span style="color:#68d391;font-weight:700;">${label}</span><span style="color:#68d391;font-weight:800;font-size:1.15rem;">${formatCurrency(paid)}</span></div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:var(--space-3);">
@@ -1545,9 +1568,10 @@ function showBookingSuccess(booking, nights=null) {
         <button class="btn btn-outline w-full" style="padding:12px;border-radius:var(--radius-full);font-size:0.9rem;" onclick="closeSuccessModal();navigateTo('home')">Return to Homepage</button>
       </div>
     </div>`;
-  document.getElementById('success-modal-overlay').classList.add('active');
+    
+  successModal.classList.add('active');
 }
-function closeSuccessModal() { document.getElementById('success-modal-overlay').classList.remove('active'); }
+function closeSuccessModal() { document.getElementById('success-modal-overlay')?.classList.remove('active'); }
 
 /* ─── Booking Detail Modal ─────────────────────────────────────────────── */
 async function openBookingDetail(id) {
