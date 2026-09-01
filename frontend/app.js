@@ -909,7 +909,14 @@ async function settleBalance(bookingId, dueAmount) {
     showToast('Payment failed', error, 'error');
     return;
   }
-  showToast('Balance Settled! ✓', `Payment of ${formatCurrency(dueAmount)} recorded. Stay is fully paid.`, 'success');
+  showToast('Balance Settled! ✓', `Payment of ${formatCurrency(dueAmount)} recorded.`, 'success');
+  
+  // Fetch updated booking details to show the secured stay confirmation display
+  const {ok: bok, data: updatedBooking} = await apiJSON(`/bookings/${bookingId}`);
+  if (bok && updatedBooking) {
+    showBookingSuccess(updatedBooking, null, 'Remaining Balance Paid');
+  }
+  
   await loadDashboard();
 }
 
@@ -1578,6 +1585,7 @@ async function openBookingDetail(id) {
       </div>
     </div>`:''}`;
 }
+
 async function addPayment(id) {
   const amount=parseFloat(document.getElementById('payment-amount-input').value);
   const method=document.getElementById('payment-method-input').value;
@@ -1586,6 +1594,13 @@ async function addPayment(id) {
   if(!ok){showToast('Payment failed',error,'error');return;}
   showToast('Payment recorded! ✓',`${formatCurrency(amount)} recorded.`,'success');
   closeDetailModal();
+  
+  // Open the secured stay confirmation display
+  const {ok: bok, data: updatedBooking} = await apiJSON(`/bookings/${id}`);
+  if (bok && updatedBooking) {
+    showBookingSuccess(updatedBooking, null, 'Payment Received');
+  }
+
   if(currentPage==='dashboard') await loadDashboard();
   if(currentPage==='admin') await loadAdminStats();
 }
