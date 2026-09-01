@@ -600,11 +600,6 @@ function selectRoom(roomId,checkIn,checkOut,guests,roomData) {
   }
   openBookingModal(roomId,checkIn,checkOut,guests,roomData);
 }
-function viewProperty(propId) {
-  const sel=document.getElementById('search-property');
-  if(sel) sel.value=propId;
-  document.querySelector('.search-bar')?.scrollIntoView({behavior:'smooth'});
-}
 
 /* ─────────────────────────────────────────────────────────────────────────
    PAGE: VACANCIES (Room availability across all properties)
