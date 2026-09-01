@@ -1566,7 +1566,7 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Custom Luxury Cursor ───────────────────────────────────────────────── */
+/* ─── Multi-Color Chromatic Luxury Cursor ─────────────────────────────────── */
 @media (hover: hover) and (pointer: fine) {
   * {
     cursor: none !important;
@@ -1576,68 +1576,108 @@ footer {
     position: fixed;
     top: 0;
     left: 0;
-    width: 8px;
-    height: 8px;
-    background-color: var(--gold-300);
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #ff007a, #ff9900, #00f0ff, #7928ca, #00ff88, #ff007a);
+    background-size: 400% 400%;
     border-radius: 50%;
     pointer-events: none;
     z-index: 99999;
     transform: translate(-50%, -50%);
-    transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease;
-    box-shadow: 0 0 10px rgba(233, 168, 58, 0.8), 0 0 20px rgba(212, 137, 31, 0.4);
+    animation: cursorRainbowShift 4s ease infinite;
+    box-shadow: 0 0 12px rgba(255, 0, 122, 0.8), 0 0 24px rgba(0, 240, 255, 0.6);
+    transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
   }
 
   .custom-cursor-follower {
     position: fixed;
     top: 0;
     left: 0;
-    width: 36px;
-    height: 36px;
-    border: 1.5px solid rgba(233, 168, 58, 0.5);
-    background: radial-gradient(circle, rgba(233, 168, 58, 0.12) 0%, rgba(233, 168, 58, 0) 70%);
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 99998;
     transform: translate(-50%, -50%);
-    transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1), height 0.25s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+    border: 2px solid transparent;
+    background-image: 
+      radial-gradient(circle, rgba(255, 0, 122, 0.12) 0%, rgba(0, 240, 255, 0.12) 50%, transparent 75%),
+      linear-gradient(135deg, #ff007a, #ff9900, #00f0ff, #7928ca, #00ff88, #ff007a);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    background-size: 100% 100%, 400% 400%;
+    animation: cursorRainbowShift 6s ease infinite, followerRotate 8s linear infinite;
+    transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1), height 0.25s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s ease;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4)) drop-shadow(0 0 16px rgba(255, 0, 122, 0.3));
   }
 
-  /* Hover Expansion on Clickables */
+  /* Multi-Color Hover Expansion */
   body.cursor-hover .custom-cursor {
-    width: 12px;
-    height: 12px;
-    background-color: var(--gold-200);
-    box-shadow: 0 0 16px rgba(241, 202, 109, 1);
+    width: 14px;
+    height: 14px;
+    box-shadow: 0 0 16px rgba(255, 153, 0, 1), 0 0 30px rgba(0, 255, 136, 0.8);
   }
 
   body.cursor-hover .custom-cursor-follower {
-    width: 54px;
-    height: 54px;
-    border-color: rgba(241, 202, 109, 0.9);
-    background: radial-gradient(circle, rgba(233, 168, 58, 0.25) 0%, rgba(233, 168, 58, 0.05) 70%);
-    backdrop-filter: blur(1px);
+    width: 58px;
+    height: 58px;
+    filter: drop-shadow(0 0 14px rgba(255, 0, 122, 0.7)) drop-shadow(0 0 25px rgba(0, 240, 255, 0.7));
   }
 
-  /* Click Active Shrink/Pulse */
+  /* Click Active Burst */
   body.cursor-active .custom-cursor {
     transform: translate(-50%, -50%) scale(0.6);
   }
   body.cursor-active .custom-cursor-follower {
     transform: translate(-50%, -50%) scale(0.85);
-    border-color: var(--gold-400);
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9));
   }
 
   .custom-cursor.hidden,
   .custom-cursor-follower.hidden {
     opacity: 0;
   }
+
+  /* Multi-color Sparkle Particles */
+  .cursor-sparkle {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 99997;
+    transform: translate(-50%, -50%);
+    animation: sparkleFade 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+}
+
+@keyframes cursorRainbowShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes followerRotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes sparkleFade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -20px))) scale(0.2);
+  }
 }
 
 @media (hover: none), (pointer: coarse) {
   .custom-cursor,
-  .custom-cursor-follower {
+  .custom-cursor-follower,
+  .cursor-sparkle {
     display: none !important;
   }
 }
+
 
 

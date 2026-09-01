@@ -1697,7 +1697,7 @@ function initApp() {
   navigateTo('home');
 }
 
-/* ─── Custom Luxury Cursor Controller ────────────────────────────────────── */
+/* ─── Multi-Color Chromatic Cursor Controller ────────────────────────────── */
 function initCustomCursor() {
   const dot = document.getElementById('custom-cursor');
   const follower = document.getElementById('custom-cursor-follower');
@@ -1707,6 +1707,42 @@ function initCustomCursor() {
   let followerX = -100, followerY = -100;
   let isMoving = false;
 
+  const SPARKLE_COLORS = [
+    '#ff007a', // Hot Pink
+    '#ff9900', // Sunset Amber
+    '#ffea00', // Bright Gold
+    '#00f0ff', // Electric Cyan
+    '#7928ca', // Royal Purple
+    '#00ff88', // Emerald Mint
+    '#ff3366'  // Radiant Rose
+  ];
+
+  let lastSparkleTime = 0;
+  function spawnSparkle(x, y) {
+    const now = Date.now();
+    if (now - lastSparkleTime < 50) return; // rate limit
+    lastSparkleTime = now;
+
+    const sparkle = document.createElement('div');
+    sparkle.className = 'cursor-sparkle';
+    const color = SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)];
+    const size = Math.floor(Math.random() * 5) + 3;
+    const dx = (Math.random() - 0.5) * 30;
+    const dy = (Math.random() - 0.5) * 30 - 12;
+
+    sparkle.style.width = `${size}px`;
+    sparkle.style.height = `${size}px`;
+    sparkle.style.backgroundColor = color;
+    sparkle.style.boxShadow = `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}`;
+    sparkle.style.left = `${x}px`;
+    sparkle.style.top = `${y}px`;
+    sparkle.style.setProperty('--dx', `${dx}px`);
+    sparkle.style.setProperty('--dy', `${dy}px`);
+
+    document.body.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), 600);
+  }
+
   window.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -1714,6 +1750,8 @@ function initCustomCursor() {
     dot.style.top = `${mouseY}px`;
     dot.classList.remove('hidden');
     follower.classList.remove('hidden');
+
+    spawnSparkle(mouseX, mouseY);
 
     if (!isMoving) {
       isMoving = true;
@@ -1749,7 +1787,13 @@ function initCustomCursor() {
     }
   });
 
-  document.addEventListener('mousedown', () => document.body.classList.add('cursor-active'));
+  document.addEventListener('mousedown', (e) => {
+    document.body.classList.add('cursor-active');
+    // Burst 4 colorful sparkles on click
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => spawnSparkle(e.clientX + (Math.random() - 0.5) * 20, e.clientY + (Math.random() - 0.5) * 20), i * 30);
+    }
+  });
   document.addEventListener('mouseup', () => document.body.classList.remove('cursor-active'));
 
   document.addEventListener('mouseleave', () => {
