@@ -791,26 +791,32 @@ registerPage('dashboard', async (container) => {
             <div class="section-eyebrow">Reservations</div>
             <h2 class="heading-serif" style="font-size:1.4rem;color:var(--cream-50)">Booking History</h2>
           </div>
-          <div style="display:flex;gap:var(--space-3)">
-            <select class="search-input" style="width:auto" id="booking-status-filter">
-              <option value="">All Statuses</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="checked_in">Checked In</option>
-              <option value="checked_out">Checked Out</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="no_show">No-Show</option>
-            </select>
-          </div>
+          <div id="dash-filter-container"></div>
         </div>
         <div id="bookings-area"><div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>
       </div>
     </div>`;
   await loadDashboard();
-  document.getElementById('booking-status-filter')?.addEventListener('change',e=>loadBookingsTable(e.target.value));
 });
 
 let allBookings=[];
 let currentStatusFilter = '';
+
+function renderDashboardFilters() {
+  const confirmed = allBookings.filter(b=>b.status==='confirmed').length;
+  const completed = allBookings.filter(b=>b.status==='checked_out').length;
+  const cancelled = allBookings.filter(b=>b.status==='cancelled').length;
+  const filterContainer = document.getElementById('dash-filter-container');
+  if (filterContainer) {
+    filterContainer.innerHTML = `
+      <div class="filter-pills-bar">
+        <button class="filter-pill ${currentStatusFilter===''?'active':''}" onclick="setDashboardFilter('')">All Stays <span class="filter-pill-count">${allBookings.length}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='confirmed'?'active':''}" onclick="setDashboardFilter('confirmed')">Confirmed <span class="filter-pill-count">${confirmed}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='checked_out'?'active':''}" onclick="setDashboardFilter('checked_out')">Completed <span class="filter-pill-count">${completed}</span></button>
+        <button class="filter-pill ${currentStatusFilter==='cancelled'?'active':''}" onclick="setDashboardFilter('cancelled')">Cancelled <span class="filter-pill-count">${cancelled}</span></button>
+      </div>`;
+  }
+}
 
 async function loadDashboard() {
   const {ok,data}=await apiJSON('/bookings?limit=100');
@@ -818,8 +824,6 @@ async function loadDashboard() {
   allBookings=data.items||[];
   const confirmed =allBookings.filter(b=>b.status==='confirmed').length;
   const checkedIn =allBookings.filter(b=>b.status==='checked_in').length;
-  const completed =allBookings.filter(b=>b.status==='checked_out').length;
-  const cancelled =allBookings.filter(b=>b.status==='cancelled').length;
   const totalSpent=allBookings.reduce((s,b)=>s+(b.amount_paid||0),0);
   
   const statsEl=document.getElementById('dash-stats');
@@ -829,23 +833,14 @@ async function loadDashboard() {
     <div class="stat-card stat-card-green"><div class="stat-card-label">Active Stays</div><div class="stat-card-value">${checkedIn}</div><div class="stat-card-icon">🏨</div></div>
     <div class="stat-card stat-card-purple"><div class="stat-card-label">Amount Paid</div><div class="stat-card-value" style="font-size:1.3rem">${formatCurrency(totalSpent)}</div><div class="stat-card-icon">💰</div></div>`;
   
-  // Render filter pills
-  const filterPillsContainer = document.getElementById('booking-status-filter');
-  if (filterPillsContainer) {
-    filterPillsContainer.parentElement.innerHTML = `
-      <div class="filter-pills-bar">
-        <button class="filter-pill ${currentStatusFilter===''?'active':''}" onclick="setDashboardFilter('')">All Stays <span class="filter-pill-count">${allBookings.length}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='confirmed'?'active':''}" onclick="setDashboardFilter('confirmed')">Confirmed <span class="filter-pill-count">${confirmed}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='checked_out'?'active':''}" onclick="setDashboardFilter('checked_out')">Completed <span class="filter-pill-count">${completed}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='cancelled'?'active':''}" onclick="setDashboardFilter('cancelled')">Cancelled <span class="filter-pill-count">${cancelled}</span></button>
-      </div>`;
-  }
+  renderDashboardFilters();
   loadBookingsTable(currentStatusFilter);
 }
 
 function setDashboardFilter(status) {
   currentStatusFilter = status;
-  loadDashboard();
+  renderDashboardFilters();
+  loadBookingsTable(currentStatusFilter);
 }
 
 function loadBookingsTable(statusFilter) {
@@ -1837,6 +1832,7 @@ Object.assign(window, {
   closeUserDropdown,
   settleBalance,
   setDashboardFilter,
+  renderDashboardFilters,
   executeCancellation,
   closeCancelModal
 });
