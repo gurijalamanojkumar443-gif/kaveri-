@@ -187,22 +187,22 @@ registerPage('home', async (container) => {
           <div class="section-eyebrow">🔍 Find Your Perfect Room</div>
           <div class="search-grid" id="search-grid">
             <div class="search-field">
-              <label class="search-label">Property</label>
-              <select class="search-input" id="search-property"><option value="">Loading…</option></select>
+              <label class="search-label" for="search-property">Property</label>
+              <select class="search-input" id="search-property" aria-label="Select Property"><option value="">Loading…</option></select>
             </div>
             <div class="search-field">
-              <label class="search-label">Check-in</label>
-              <input type="date" class="search-input" id="search-checkin" />
+              <label class="search-label" for="search-checkin">Check-in</label>
+              <input type="date" class="search-input" id="search-checkin" aria-label="Check-in Date" />
             </div>
             <div class="search-field">
-              <label class="search-label">Check-out</label>
-              <input type="date" class="search-input" id="search-checkout" />
+              <label class="search-label" for="search-checkout">Check-out</label>
+              <input type="date" class="search-input" id="search-checkout" aria-label="Check-out Date" />
             </div>
             <div class="search-field">
-              <label class="search-label">Guests</label>
-              <select class="search-input" id="search-guests">${[1,2,3,4,5,6].map(n=>`<option value="${n}">${n} Guest${n>1?'s':''}</option>`).join('')}</select>
+              <label class="search-label" for="search-guests">Guests</label>
+              <select class="search-input" id="search-guests" aria-label="Select Number of Guests">${[1,2,3,4,5,6].map(n=>`<option value="${n}">${n} Guest${n>1?'s':''}</option>`).join('')}</select>
             </div>
-            <button class="btn btn-primary btn-lg" id="search-btn">Search Rooms</button>
+            <button class="btn btn-primary btn-lg" id="search-btn" aria-label="Search Available Rooms">Search Rooms</button>
           </div>
         </div>
       </div>
@@ -411,15 +411,20 @@ async function loadProperties() {
         </div>
       </div>
     </div>`).join('');
-  for (const p of data) {
-    const {ok:dok,data:det} = await apiJSON(`/properties/${p.property_id}`);
-    if (dok&&det) {
-      const de=document.getElementById(`prop-desc-${p.property_id}`);
-      const re=document.getElementById(`prop-rooms-${p.property_id}`);
-      if(de) de.textContent=descs[p.city]||`A luxury property in ${p.city}.`;
-      if(re&&det.room_types) re.innerHTML=det.room_types.map(rt=>`<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.type_name)}</span>`).join('');
+  // Parallel fetch of property details to eliminate serial waterfall
+  const detailPromises = data.map(p => apiJSON(`/properties/${p.property_id}`));
+  const detailResults = await Promise.all(detailPromises);
+  detailResults.forEach((res, i) => {
+    const p = data[i];
+    if (res && res.ok && res.data) {
+      const de = document.getElementById(`prop-desc-${p.property_id}`);
+      const re = document.getElementById(`prop-rooms-${p.property_id}`);
+      if (de) de.textContent = descs[p.city] || `A luxury property in ${p.city}.`;
+      if (re && res.data.room_types) {
+        re.innerHTML = res.data.room_types.map(rt => `<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.type_name)}</span>`).join('');
+      }
     }
-  }
+  });
 }
 
 function viewProperty(propId, roomTypeId=null) {
@@ -455,18 +460,25 @@ async function searchAvailability(overridePropId=null, roomTypeId=null) {
     if(!ok){ showToast('Search failed',error,'error'); if(wrapper)wrapper.innerHTML=''; return; }
     renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeId);
   } else {
-    // Search across ALL properties
-    const propsToQuery = propertiesCache || [];
-    let allRooms = [];
-    for (const prop of propsToQuery) {
-      if (!prop) continue;
-      const params = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
-      if (roomTypeId) params.set('room_type_id', roomTypeId);
-      const {ok,data} = await apiJSON(`/rooms/availability?${params}`);
-      if(ok&&data) allRooms.push(...data.map(r=>({...r,property_name:prop.name,property_city:prop.city})));
-    }
+    // Single fast query across ALL properties
+    const params = new URLSearchParams({check_in:checkIn,check_out:checkOut});
+    if (roomTypeId) params.set('room_type_id', roomTypeId);
+    const {ok,data} = await apiJSON(`/rooms/availability?${params}`);
     if (btn) setLoading(btn,false);
-    renderMultiPropertyAvailability(allRooms,checkIn,checkOut,guests,nights);
+    if (ok && data && data.length > 0) {
+      renderMultiPropertyAvailability(data,checkIn,checkOut,guests,nights);
+    } else if (ok && data) {
+      renderMultiPropertyAvailability([],checkIn,checkOut,guests,nights);
+    } else {
+      // Fallback: parallel fetching
+      const propsToQuery = propertiesCache || [];
+      const results = await Promise.all(propsToQuery.map(prop => {
+        const pParams = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
+        if (roomTypeId) pParams.set('room_type_id', roomTypeId);
+        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({...room, property_name:prop.name, property_city:prop.city})) : []);
+      }));
+      renderMultiPropertyAvailability(results.flat(),checkIn,checkOut,guests,nights);
+    }
   }
 }
 
@@ -618,27 +630,27 @@ registerPage('vacancies', async (container) => {
         <div class="glass-card" style="margin-bottom:var(--space-6)">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:var(--space-4);align-items:end;">
             <div class="search-field">
-              <label class="search-label">Property</label>
-              <select class="search-input" id="vac-property"><option value="">All Properties</option></select>
+              <label class="search-label" for="vac-property">Property</label>
+              <select class="search-input" id="vac-property" aria-label="Select Property"><option value="">All Properties</option></select>
             </div>
             <div class="search-field">
-              <label class="search-label">Check-in</label>
-              <input type="date" class="search-input" id="vac-checkin" />
+              <label class="search-label" for="vac-checkin">Check-in</label>
+              <input type="date" class="search-input" id="vac-checkin" aria-label="Check-in Date" />
             </div>
             <div class="search-field">
-              <label class="search-label">Check-out</label>
-              <input type="date" class="search-input" id="vac-checkout" />
+              <label class="search-label" for="vac-checkout">Check-out</label>
+              <input type="date" class="search-input" id="vac-checkout" aria-label="Check-out Date" />
             </div>
             <div class="search-field">
-              <label class="search-label">Room Type</label>
-              <select class="search-input" id="vac-type">
+              <label class="search-label" for="vac-type">Room Type</label>
+              <select class="search-input" id="vac-type" aria-label="Select Room Type">
                 <option value="">Any Type</option>
                 <option value="1">Standard</option>
                 <option value="2">Deluxe</option>
                 <option value="3">Suite</option>
               </select>
             </div>
-            <button class="btn btn-primary btn-lg" id="vac-search-btn">Search</button>
+            <button class="btn btn-primary btn-lg" id="vac-search-btn" aria-label="Search Room Vacancies">Search</button>
           </div>
         </div>
 
@@ -692,15 +704,27 @@ async function searchVacancies() {
   results.innerHTML=`<div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>`;
   const nights = nightsBetween(checkIn,checkOut);
 
-  // Fetch all properties or one
-  const propsToQuery = propId ? [propertiesCache?.find(p=>p.property_id==propId)] : (propertiesCache||[]);
   let allRooms = [];
-  for (const prop of propsToQuery) {
-    if (!prop) continue;
-    const params = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
+  if (propId) {
+    const params = new URLSearchParams({property_id:propId,check_in:checkIn,check_out:checkOut});
     if(roomType) params.set('room_type_id',roomType);
     const {ok,data}=await apiJSON(`/rooms/availability?${params}`);
-    if(ok&&data) allRooms.push(...data.map(r=>({...r,property_name:prop.name,property_city:prop.city})));
+    if(ok&&data) allRooms = data;
+  } else {
+    const params = new URLSearchParams({check_in:checkIn,check_out:checkOut});
+    if(roomType) params.set('room_type_id',roomType);
+    const {ok,data}=await apiJSON(`/rooms/availability?${params}`);
+    if(ok&&data) {
+      allRooms = data;
+    } else {
+      const propsToQuery = propertiesCache||[];
+      const results = await Promise.all(propsToQuery.map(prop => {
+        const pParams = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
+        if(roomType) pParams.set('room_type_id',roomType);
+        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({...room, property_name:prop.name, property_city:prop.city})) : []);
+      }));
+      allRooms = results.flat();
+    }
   }
   setLoading(btn,false);
 
@@ -2035,8 +2059,7 @@ function initRocketCursor() {
     mouseX = e.clientX;
     mouseY = e.clientY;
 
-    rocket.style.left = `${mouseX}px`;
-    rocket.style.top = `${mouseY}px`;
+    rocket.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
     rocket.classList.remove('hidden');
 
     const dist = Math.hypot(mouseX - prevX, mouseY - prevY);

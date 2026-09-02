@@ -78,6 +78,8 @@ class PropertyDetailResponse(BaseModel):
 class AvailableRoomResponse(BaseModel):
     room_id: int
     property_id: int
+    property_name: Optional[str] = None
+    property_city: Optional[str] = None
     room_number: str
     room_type_id: int
     type_name: str

@@ -7,7 +7,9 @@
   <meta name="description" content="Experience India's finest luxury retreats in Coorg, Ooty and Alleppey. Book your perfect stay at Kaveri Stays." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet" />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" as="style" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="hero.jpg" fetchpriority="high" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -39,12 +41,12 @@
         <div class="logo-mark">K</div>
         <span class="logo-text">Kaveri <span>Stays</span></span>
       </div>
-      <ul class="nav-links" id="main-nav-links" role="menubar">
-        <li><span class="nav-link" data-nav="home" role="menuitem" tabindex="0">Home</span></li>
-        <li><span class="nav-link" id="nav-properties-link" role="menuitem" tabindex="0">Properties</span></li>
-        <li><span class="nav-link" data-nav="vacancies" role="menuitem" tabindex="0">Vacancies</span></li>
-        <li><span class="nav-link" data-nav="dashboard" role="menuitem" tabindex="0">My Bookings</span></li>
-        <li><span class="nav-link hidden" data-nav="admin" id="nav-admin-link" role="menuitem" tabindex="0">Admin ⚙</span></li>
+      <ul class="nav-links" id="main-nav-links">
+        <li><button class="nav-link" data-nav="home">Home</button></li>
+        <li><button class="nav-link" id="nav-properties-link">Properties</button></li>
+        <li><button class="nav-link" data-nav="vacancies">Vacancies</button></li>
+        <li><button class="nav-link" data-nav="dashboard">My Bookings</button></li>
+        <li><button class="nav-link hidden" data-nav="admin" id="nav-admin-link">Admin ⚙</button></li>
       </ul>
       <div class="nav-actions">
         <div id="nav-auth">
