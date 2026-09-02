@@ -1922,13 +1922,6 @@ function initApp() {
   hamburger?.addEventListener('click', () => navLinks?.classList.contains('mobile-open') ? closeMobileNav() : openMobileNav());
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeMobileNav(); });
 
-  // Show hamburger on small screens
-  function updateHamburgerVisibility() {
-    if(hamburger) hamburger.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
-  }
-  updateHamburgerVisibility();
-  window.addEventListener('resize', updateHamburgerVisibility, {passive:true});
-
   initRocketCursor();
   updateNavForAuthState();
   navigateTo('home', {}, false);
@@ -1941,18 +1934,24 @@ function initRocketCursor() {
   if (!rocket || !canvas) return;
 
   const ctx = canvas.getContext('2d');
-  let width = (canvas.width = window.innerWidth);
-  let height = (canvas.height = window.innerHeight);
+  let width = 0, height = 0;
+  let canvasSized = false;
 
-  window.addEventListener('resize', () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-  }, { passive: true });
+  function ensureCanvasSize() {
+    if (!canvasSized || width !== window.innerWidth || height !== window.innerHeight) {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      canvasSized = true;
+    }
+  }
+
+  window.addEventListener('resize', () => { canvasSized = false; }, { passive: true });
 
   const particles = [];
   const colors = ['#ff9a3c', '#ff5500', '#ff2200', '#ffc233', '#ffffff'];
 
   function spawnParticle(x, y, isBurst = false) {
+    ensureCanvasSize();
     const count = isBurst ? 12 : 2;
     for (let i = 0; i < count; i++) {
       const angle = isBurst ? Math.random() * Math.PI * 2 : (Math.PI / 4) + (Math.random() * 0.8 - 0.4);
