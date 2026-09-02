@@ -367,6 +367,12 @@ input, select, textarea { font-family: inherit; }
   border-radius: var(--radius-lg);
 }
 
+/* ─── Main Content Container ─────────────────────────────────────────────── */
+#main-content {
+  min-height: 100vh;
+  display: block;
+}
+
 /* ─── Hero Section ───────────────────────────────────────────────────────── */
 .hero {
   position: relative;
