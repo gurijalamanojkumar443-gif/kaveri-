@@ -379,10 +379,10 @@ input, select, textarea { font-family: inherit; }
 .hero-bg {
   position: absolute;
   inset: 0;
-  background-image: url('hero.jpg');
+  background-image: image-set(url('hero.webp') type('image/webp'), url('hero.jpg') type('image/jpeg'));
   background-size: cover;
   background-position: center 40%;
-  transition: transform 0.1s linear;
+  will-change: transform;
 }
 .hero-overlay {
   position: absolute;

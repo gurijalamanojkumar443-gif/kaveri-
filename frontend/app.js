@@ -139,7 +139,7 @@ function updateNavForAuthState() {
 const pages = {};
 function registerPage(name,fn) { pages[name]=fn; }
 let currentPage = null;
-function navigateTo(name,params={}) {
+function navigateTo(name,params={}, smoothScroll=true) {
   currentPage = name;
   closeUserDropdown();
   // Highlight active link in navbar
@@ -151,7 +151,7 @@ function navigateTo(name,params={}) {
   main.innerHTML = '';
   if (pages[name]) pages[name](main,params);
   else main.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🗺️</div><div class="empty-state-title">Page not found</div></div>`;
-  window.scrollTo({top:0,behavior:'smooth'});
+  if (smoothScroll) window.scrollTo({top:0,behavior:'smooth'});
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -246,13 +246,10 @@ registerPage('home', async (container) => {
   document.getElementById('search-checkout').min = d1;
 
   const heroBg = document.getElementById('hero-bg');
-  const onScroll = () => { if(heroBg) heroBg.style.transform=`translateY(${window.scrollY*0.3}px)`; };
+  const onScroll = () => { if(heroBg) heroBg.style.transform=`translate3d(0, ${window.scrollY*0.3}px, 0)`; };
   window.addEventListener('scroll', onScroll, {passive:true});
 
   await loadProperties();
-
-  // Auto-search availability on initial load so rooms are immediately visible
-  searchAvailability();
 
   document.getElementById('search-btn').addEventListener('click', ()=>searchAvailability());
   document.getElementById('hero-explore-btn').addEventListener('click', ()=>document.getElementById('properties-section').scrollIntoView({behavior:'smooth'}));
@@ -394,7 +391,10 @@ async function loadProperties() {
     'Ooty':'Perched in the Nilgiri hills — colonial charm with fragrant eucalyptus groves and rolling tea estates.',
     'Alleppey':"Kerala's soul on our exclusive retreat surrounded by emerald backwater lagoons.",
   };
-  grid.innerHTML = data.map((p,i)=>`
+  grid.innerHTML = data.map((p,i)=>{
+    const modalData = PROPERTY_MODAL_DATA[p.property_id] || {};
+    const roomChips = modalData.roomTypes ? modalData.roomTypes.map(rt => `<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.name)}</span>`).join('') : '';
+    return `
     <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}" onclick="openPropertyModal(${p.property_id})" style="cursor:pointer;">
       <div class="property-card-img-wrapper" style="background:${bgs[i%3]};display:flex;align-items:center;justify-content:center;font-size:5rem;cursor:pointer;">
         ${emojis[i%3]}
@@ -404,27 +404,14 @@ async function loadProperties() {
       <div class="property-card-body">
         <div class="property-card-city">${escHtml(p.city)}</div>
         <div class="property-card-name">${escHtml(p.name)}</div>
-        <div class="property-card-description" id="prop-desc-${p.property_id}">Loading…</div>
+        <div class="property-card-description" id="prop-desc-${p.property_id}">${escHtml(descs[p.city] || modalData.tagline || `A luxury property in ${p.city}.`)}</div>
         <div class="property-card-footer">
-          <div class="property-room-types" id="prop-rooms-${p.property_id}"></div>
+          <div class="property-room-types" id="prop-rooms-${p.property_id}">${roomChips}</div>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">Explore ✦</button>
         </div>
       </div>
-    </div>`).join('');
-  // Parallel fetch of property details to eliminate serial waterfall
-  const detailPromises = data.map(p => apiJSON(`/properties/${p.property_id}`));
-  const detailResults = await Promise.all(detailPromises);
-  detailResults.forEach((res, i) => {
-    const p = data[i];
-    if (res && res.ok && res.data) {
-      const de = document.getElementById(`prop-desc-${p.property_id}`);
-      const re = document.getElementById(`prop-rooms-${p.property_id}`);
-      if (de) de.textContent = descs[p.city] || `A luxury property in ${p.city}.`;
-      if (re && res.data.room_types) {
-        re.innerHTML = res.data.room_types.map(rt => `<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.type_name)}</span>`).join('');
-      }
-    }
-  });
+    </div>`;
+  }).join('');
 }
 
 function viewProperty(propId, roomTypeId=null) {
@@ -1944,7 +1931,7 @@ function initApp() {
 
   initRocketCursor();
   updateNavForAuthState();
-  navigateTo('home');
+  navigateTo('home', {}, false);
 }
 
 /* ─── Orange Rocket Cursor & Thruster Star Trail ─────────────────────────── */
