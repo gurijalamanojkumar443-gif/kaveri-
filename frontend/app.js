@@ -1077,7 +1077,8 @@ async function loadAdminTab(tab) {
     const items=data.items||[];
     content.innerHTML=`
       <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap">
-        <select class="search-input" style="width:auto" id="admin-status-filter">
+        <label class="sr-only" for="admin-status-filter">Filter bookings by status</label>
+        <select class="search-input" style="width:auto" id="admin-status-filter" aria-label="Filter bookings by status">
           <option value="">All Statuses</option>
           <option value="confirmed">Confirmed</option>
           <option value="checked_in">Checked In</option>
@@ -1150,12 +1151,12 @@ async function loadAdminTab(tab) {
         <div class="heading-serif" style="font-size:1.1rem;color:var(--cream-50);margin-bottom:var(--space-4)">Report Date Range</div>
         <div style="display:flex;gap:var(--space-4);align-items:flex-end;flex-wrap:wrap">
           <div class="search-field">
-            <label class="search-label">From</label>
-            <input type="date" class="search-input" id="report-start" value="${monthStart}" />
+            <label class="search-label" for="report-start">From</label>
+            <input type="date" class="search-input" id="report-start" aria-label="Report Start Date" value="${monthStart}" />
           </div>
           <div class="search-field">
-            <label class="search-label">To</label>
-            <input type="date" class="search-input" id="report-end" value="${today}" />
+            <label class="search-label" for="report-end">To</label>
+            <input type="date" class="search-input" id="report-end" aria-label="Report End Date" value="${today}" />
           </div>
           <button class="btn btn-primary" id="run-report-btn" onclick="runReports()">Run Reports</button>
         </div>
@@ -1477,8 +1478,8 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
     </div>
 
     <div class="form-group" style="margin-bottom:var(--space-3);">
-      <label class="form-label">Guests <span class="required">*</span></label>
-      <select class="form-input" id="booking-guest-count">${Array.from({length:maxOcc},(_,i)=>i+1).map(n=>`<option value="${n}" ${n==Math.min(guests,maxOcc)?'selected':''}>${n} Guest${n>1?'s':''}</option>`).join('')}</select>
+      <label class="form-label" for="booking-guest-count">Guests <span class="required">*</span></label>
+      <select class="form-input" id="booking-guest-count" aria-label="Number of Guests">${Array.from({length:maxOcc},(_,i)=>i+1).map(n=>`<option value="${n}" ${n==Math.min(guests,maxOcc)?'selected':''}>${n} Guest${n>1?'s':''}</option>`).join('')}</select>
     </div>
 
     <div class="form-group" style="margin-bottom:var(--space-4);">
@@ -1628,8 +1629,8 @@ async function openBookingDetail(id) {
     <div style="margin-top:var(--space-5)">
       <div class="section-eyebrow" style="margin-bottom:var(--space-3)">Add Payment</div>
       <div style="display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap">
-        <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0"><label class="form-label">Amount (₹)</label><input type="number" class="form-input" id="payment-amount-input" placeholder="e.g. 5000" min="1"></div>
-        <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0"><label class="form-label">Method</label><select class="form-input" id="payment-method-input"><option value="card">Card</option><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option></select></div>
+        <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0"><label class="form-label" for="payment-amount-input">Amount (₹)</label><input type="number" class="form-input" id="payment-amount-input" placeholder="e.g. 5000" min="1" aria-label="Payment Amount in Rupees"></div>
+        <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0"><label class="form-label" for="payment-method-input">Method</label><select class="form-input" id="payment-method-input" aria-label="Payment Method"><option value="card">Card</option><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option></select></div>
         <button class="btn btn-primary" onclick="addPayment(${data.booking_id})">Pay Now</button>
       </div>
     </div>`:''}`;

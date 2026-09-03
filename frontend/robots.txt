@@ -1,0 +1,6 @@
+# Robots.txt for Kaveri Stays
+User-agent: *
+Allow: /
+Disallow: /backend/
+
+Sitemap: https://kaveri-1.onrender.com/sitemap.xml

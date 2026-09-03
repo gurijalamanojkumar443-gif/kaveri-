@@ -265,18 +265,18 @@
       <div class="modal-body">
         <p class="text-sm text-muted" style="margin-bottom:var(--space-5);">Share your experience to help future guests discover the magic of Kaveri Stays.</p>
         <div class="form-group">
-          <label class="form-label">Your Rating <span class="required">*</span></label>
-          <div class="star-rating" id="review-stars">
-            <span class="star-btn" onclick="setRating(1)">☆</span>
-            <span class="star-btn" onclick="setRating(2)">☆</span>
-            <span class="star-btn" onclick="setRating(3)">☆</span>
-            <span class="star-btn" onclick="setRating(4)">☆</span>
-            <span class="star-btn" onclick="setRating(5)">☆</span>
+          <label class="form-label" id="rating-label">Your Rating <span class="required">*</span></label>
+          <div class="star-rating" id="review-stars" role="radiogroup" aria-labelledby="rating-label">
+            <span class="star-btn" role="radio" tabindex="0" aria-label="1 Star" onclick="setRating(1)">☆</span>
+            <span class="star-btn" role="radio" tabindex="0" aria-label="2 Stars" onclick="setRating(2)">☆</span>
+            <span class="star-btn" role="radio" tabindex="0" aria-label="3 Stars" onclick="setRating(3)">☆</span>
+            <span class="star-btn" role="radio" tabindex="0" aria-label="4 Stars" onclick="setRating(4)">☆</span>
+            <span class="star-btn" role="radio" tabindex="0" aria-label="5 Stars" onclick="setRating(5)">☆</span>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="review-comment">Comments (Optional)</label>
-          <textarea class="form-input" id="review-comment" rows="4" placeholder="Describe your stay — the views, the hospitality, the food…" style="resize:vertical;"></textarea>
+          <textarea class="form-input" id="review-comment" aria-label="Review Comments" rows="4" placeholder="Describe your stay — the views, the hospitality, the food…" style="resize:vertical;"></textarea>
         </div>
       </div>
       <div class="modal-footer">
