@@ -20,30 +20,101 @@ const DEMO_ACCOUNTS = [
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
+   JWT DECODER HELPER
+   ───────────────────────────────────────────────────────────────────────── */
+function decodeJwtPayload(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
    AUTH STATE
    ───────────────────────────────────────────────────────────────────────── */
 const Auth = {
   get token()   { return localStorage.getItem('ks_access_token'); },
   get refresh() { return localStorage.getItem('ks_refresh_token'); },
-  get user()    { try { return JSON.parse(localStorage.getItem('ks_user') || 'null'); } catch { return null; } },
+  get user()    {
+    try {
+      const stored = localStorage.getItem('ks_user');
+      if (stored) return JSON.parse(stored);
+      if (this.token) {
+        const payload = decodeJwtPayload(this.token);
+        if (payload) {
+          const u = {
+            account_id: payload.account_id,
+            name: payload.name || payload.email?.split('@')[0] || 'Guest',
+            email: payload.email,
+            role: payload.role || 'guest',
+            property_id: payload.property_id || null,
+            guest_id: payload.guest_id || null
+          };
+          localStorage.setItem('ks_user', JSON.stringify(u));
+          return u;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
   save(tokens, user) {
-    localStorage.setItem('ks_access_token',  tokens.access_token);
-    localStorage.setItem('ks_refresh_token', tokens.refresh_token);
-    if (user) localStorage.setItem('ks_user', JSON.stringify(user));
+    if (tokens?.access_token) localStorage.setItem('ks_access_token', tokens.access_token);
+    if (tokens?.refresh_token) localStorage.setItem('ks_refresh_token', tokens.refresh_token);
+    if (user) {
+      localStorage.setItem('ks_user', JSON.stringify(user));
+    } else if (tokens?.access_token) {
+      const payload = decodeJwtPayload(tokens.access_token);
+      if (payload) {
+        const u = {
+          account_id: payload.account_id,
+          name: payload.name || payload.email?.split('@')[0] || 'Guest',
+          email: payload.email,
+          role: payload.role || 'guest',
+          property_id: payload.property_id || null,
+          guest_id: payload.guest_id || null
+        };
+        localStorage.setItem('ks_user', JSON.stringify(u));
+      }
+    }
   },
   clear() { ['ks_access_token','ks_refresh_token','ks_user'].forEach(k => localStorage.removeItem(k)); },
-  isLoggedIn() { return !!this.token; },
+  isLoggedIn() {
+    if (!this.token) return false;
+    const payload = decodeJwtPayload(this.token);
+    if (payload?.exp && (payload.exp * 1000) < Date.now()) {
+      if (!this.refresh) {
+        this.clear();
+        return false;
+      }
+    }
+    return true;
+  },
   isStaff()   { return ['staff','manager','owner'].includes(this.user?.role); },
   isManager() { return ['manager','owner'].includes(this.user?.role); },
   isOwner()   { return this.user?.role === 'owner'; },
   async refreshTokens() {
     if (!this.refresh) return false;
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({refresh_token: this.refresh}) });
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: this.refresh })
+      });
       if (!res.ok) { this.clear(); return false; }
       const d = await res.json();
-      localStorage.setItem('ks_access_token', d.access_token);
-      localStorage.setItem('ks_refresh_token', d.refresh_token);
+      this.save(d, null);
       return true;
     } catch { this.clear(); return false; }
   }
@@ -54,20 +125,38 @@ const Auth = {
    ───────────────────────────────────────────────────────────────────────── */
 async function apiFetch(path, options={}, retry=true) {
   const headers = {'Content-Type':'application/json', ...options.headers};
-  if (Auth.isLoggedIn()) headers['Authorization'] = `Bearer ${Auth.token}`;
-  const res = await fetch(`${API_BASE}${path}`, {...options, headers});
-  if (res.status === 401 && retry) {
-    const ok = await Auth.refreshTokens();
-    if (ok) return apiFetch(path, options, false);
-    Auth.clear(); updateNavForAuthState();
-    showToast('Session expired','Please log in again.','warning');
+  
+  // Proactively refresh expired or near-expired token
+  if (Auth.token) {
+    const payload = decodeJwtPayload(Auth.token);
+    if (payload?.exp && (payload.exp * 1000) <= (Date.now() + 5000)) {
+      if (Auth.refresh) {
+        await Auth.refreshTokens();
+      }
+    }
+  }
+
+  if (Auth.isLoggedIn() && Auth.token) headers['Authorization'] = `Bearer ${Auth.token}`;
+  
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {...options, headers});
+    if (res.status === 401 && retry) {
+      const ok = await Auth.refreshTokens();
+      if (ok) return apiFetch(path, options, false);
+      Auth.clear();
+      updateNavForAuthState();
+      showToast('Session expired', 'Please log in again.', 'warning');
+      return res;
+    }
+    return res;
+  } catch (err) {
+    console.warn(`[API] Fetch failed for ${path}:`, err);
     return null;
   }
-  return res;
 }
 async function apiJSON(path, options={}) {
   const res = await apiFetch(path, options);
-  if (!res) return { ok:false, data:null, error:'Session expired' };
+  if (!res) return { ok:false, data:null, error:'Network error or session expired' };
   const data = await res.json().catch(()=>null);
   if (!res.ok) return { ok:false, data:null, error: data?.error?.message || `HTTP ${res.status}` };
   return { ok:true, data, error:null };
@@ -1263,9 +1352,14 @@ async function runReports() {
    ───────────────────────────────────────────────────────────────────────── */
 registerPage('profile', async (container) => {
   if (!Auth.isLoggedIn()) { navigateTo('home'); return; }
-  const {ok,data}=await apiJSON('/auth/me');
-  if(ok&&data) Auth.save({access_token:Auth.token,refresh_token:Auth.refresh},data);
-  const user=Auth.user;
+  let user = Auth.user;
+  if (!user || !user.name) {
+    const {ok, data} = await apiJSON('/auth/me');
+    if (ok && data) {
+      Auth.save({ access_token: Auth.token, refresh_token: Auth.refresh }, data);
+      user = data;
+    }
+  }
   container.innerHTML=`
     <div class="page"><div class="container" style="max-width:680px">
       <div style="margin-bottom:var(--space-8);padding-top:var(--space-4)">
@@ -1366,9 +1460,7 @@ async function handleLogin(e) {
   const {ok,data,error}=await apiJSON('/auth/login',{method:'POST',body:JSON.stringify({email,password})});
   setLoading(btn,false);
   if(!ok){showToast('Login failed',error,'error');return;}
-  Auth.save(data,null);
-  const {ok:ok2,data:me}=await apiJSON('/auth/me');
-  if(ok2&&me) Auth.save(data,me);
+  Auth.save(data, null);
   closeAuthModal();
   updateNavForAuthState();
   const role=Auth.user?.role;
