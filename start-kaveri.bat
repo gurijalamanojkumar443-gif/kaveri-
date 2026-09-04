@@ -7,7 +7,7 @@ echo ========================================
 echo.
 
 REM Start FastAPI Backend
-start "Kaveri Stays API" cmd /k "cd /d C:\kaveri project && venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
+start "Kaveri Stays API" cmd /k "cd /d C:\kaveri project && venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload"
 
 REM Wait for backend
 timeout /t 4 /nobreak >nul
