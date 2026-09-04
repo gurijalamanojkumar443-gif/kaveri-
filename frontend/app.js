@@ -2515,21 +2515,45 @@ function renderAiHistory(target = 'both') {
           `</div>`
         : '';
 
-      const actionHTML = msg.pendingAction
-        ? `
-          <div class="ai-action-card">
-            <div class="ai-action-card-prompt">${escHtml(msg.pendingAction.prompt_message || 'Human confirmation required for this action:')}</div>
-            <div class="ai-action-btn-group">
-              <button class="ai-action-btn-yes" onclick="confirmAiAction('${msg.pendingAction.action_type}', ${msg.pendingAction.booking_id || 0}, true)">
-                ✓ Yes, Cancel Booking #${msg.pendingAction.booking_id || ''}
-              </button>
-              <button class="ai-action-btn-no" onclick="confirmAiAction('${msg.pendingAction.action_type}', ${msg.pendingAction.booking_id || 0}, false)">
-                ✕ No, Keep Booking
-              </button>
+      let actionHTML = '';
+      if (msg.pendingAction) {
+        const pa = msg.pendingAction;
+        if (pa.action_type === 'confirm_booking') {
+          const d = pa.details || {};
+          const depositFormatted = d.deposit_amount ? ` (₹${Number(d.deposit_amount).toLocaleString('en-IN')} Deposit)` : '';
+          const safeDetails = escHtml(JSON.stringify(d));
+          actionHTML = `
+            <div class="ai-action-card">
+              <div class="ai-action-card-prompt">${escHtml(pa.prompt_message || 'Confirm Room Reservation?')}</div>
+              <div class="ai-action-btn-group" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                <button class="ai-action-btn-yes" onclick="confirmAiAction('confirm_booking', ${d.room_id || 0}, true)">
+                  ✓ Yes, Confirm Reservation${depositFormatted}
+                </button>
+                <button class="ai-action-btn-yes" style="background:rgba(212,137,31,0.2);border-color:rgba(212,137,31,0.5);color:#fde047;" onclick="openAiBookingPayment(${safeDetails})">
+                  💳 Custom Payment Form
+                </button>
+                <button class="ai-action-btn-no" onclick="confirmAiAction('confirm_booking', ${d.room_id || 0}, false)">
+                  ✕ No, Cancel Request
+                </button>
+              </div>
             </div>
-          </div>
-        `
-        : '';
+          `;
+        } else {
+          actionHTML = `
+            <div class="ai-action-card">
+              <div class="ai-action-card-prompt">${escHtml(pa.prompt_message || 'Human confirmation required for this action:')}</div>
+              <div class="ai-action-btn-group" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                <button class="ai-action-btn-yes" onclick="confirmAiAction('cancel_booking', ${pa.booking_id || 0}, true)">
+                  ✓ Yes, Cancel Booking #${pa.booking_id || ''}
+                </button>
+                <button class="ai-action-btn-no" onclick="confirmAiAction('cancel_booking', ${pa.booking_id || 0}, false)">
+                  ✕ No, Keep Booking Active
+                </button>
+              </div>
+            </div>
+          `;
+        }
+      }
 
       return `
         <div class="ai-msg ${isUser ? 'ai-msg-user' : 'ai-msg-assistant'}">
@@ -2625,9 +2649,31 @@ async function sendAiChatMessage(text, source = 'drawer') {
   }
 }
 
-function confirmAiAction(actionType, bookingId, affirmative, source = 'drawer') {
-  const replyText = affirmative ? `Yes, please confirm cancellation for Booking #${bookingId}` : `No, keep Booking #${bookingId} active`;
+function confirmAiAction(actionType, bookingOrRoomId, affirmative, source = 'drawer') {
+  let replyText = '';
+  if (actionType === 'confirm_booking') {
+    replyText = affirmative ? 'Yes, please confirm reservation' : 'No, cancel reservation';
+  } else {
+    replyText = affirmative ? `Yes, please confirm cancellation for Booking #${bookingOrRoomId}` : `No, keep Booking #${bookingOrRoomId} active`;
+  }
   sendAiChatMessage(replyText, source);
+}
+
+function openAiBookingPayment(details) {
+  try {
+    const d = typeof details === 'string' ? JSON.parse(details) : details;
+    toggleAiDrawer(false);
+    openBookingModal(d.room_id, d.check_in, d.check_out, d.guest_count || 1, {
+      room_id: d.room_id,
+      room_number: d.room_number,
+      type_name: d.room_type,
+      nightly_rate: d.nightly_rate,
+      property_name: d.property_name,
+      max_occupancy: d.max_occupancy || 4
+    });
+  } catch (err) {
+    console.error('Failed to open booking modal from AI concierge:', err);
+  }
 }
 
 Object.assign(window, {
@@ -2678,6 +2724,7 @@ Object.assign(window, {
   sendAiChatMessage,
   resetAiSession,
   confirmAiAction,
+  openAiBookingPayment,
   renderPageSuggestions
 });
 

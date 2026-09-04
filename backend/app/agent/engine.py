@@ -208,11 +208,21 @@ class KaveriAgentEngine:
         # ─── 1. CHECK HUMAN CONFIRMATION GUARDRAIL ───────────────────────────
         if state.pending_action:
             pending = state.pending_action
-            affirmative_words = ["yes", "confirm", "proceed", "cancel it", "cancel booking", "book it", "reserve it", "sure", "ok", "yep", "do it", "please", "confirm booking"]
-            negative_words = ["no", "cancel that", "don't", "keep it", "nevermind", "abort", "wait", "nope", "stop", "change"]
 
-            is_affirmative = any(w in lower_msg for w in affirmative_words)
-            is_negative = any(w in lower_msg for w in negative_words)
+            # Identify affirmation vs negation
+            is_yes_start = lower_msg.startswith("yes") or lower_msg.startswith("yep") or lower_msg.startswith("sure") or lower_msg.startswith("ok")
+            is_no_start = lower_msg.startswith("no") or lower_msg.startswith("nope") or lower_msg.startswith("don't") or lower_msg.startswith("stop")
+
+            affirmative_words = ["yes", "confirm", "proceed", "cancel it", "cancel booking", "book it", "reserve it", "sure", "ok", "yep", "do it", "confirm booking", "confirm reservation", "pay deposit"]
+            negative_words = ["no", "cancel that", "don't", "keep it", "nevermind", "abort", "wait", "nope", "stop", "change", "cancel request", "keep booking"]
+
+            is_affirmative = is_yes_start or any(w in lower_msg for w in affirmative_words)
+            is_negative = is_no_start or any(w in lower_msg for w in negative_words)
+
+            if is_yes_start:
+                is_negative = False
+            elif is_no_start:
+                is_affirmative = False
 
             if pending.action_type == "cancel_booking":
                 if is_affirmative and not is_negative:
@@ -274,7 +284,7 @@ class KaveriAgentEngine:
                             f"• **Dates**: {res_data['check_in']} → {res_data['check_out']} ({res_data['nights']} night{'s' if res_data['nights'] != 1 else ''})\n"
                             f"• **Total Cost**: ₹{res_data['total_cost']:,.2f} | **Deposit Recorded**: ₹{res_data['total_paid']:,.2f}\n"
                             f"• **Balance Due at Check-in**: ₹{res_data['balance_due']:,.2f}\n\n"
-                            f"We have registered this booking under your account, {state.guest_name}. We look forward to welcoming you!"
+                            f"We have registered this booking under your account, {state.guest_name}. You can manage or make additional payments anytime from your dashboard!"
                         )
                     else:
                         err_msg = tool_res.result.get("error", "Unable to complete reservation.")
