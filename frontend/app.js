@@ -710,7 +710,7 @@ function renderMultiPropertyAvailability(allRooms, checkIn, checkOut, guests, ni
       <div class="availability-header">
         <div>
           <div class="section-eyebrow">All Properties · Live Availability</div>
-          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${filtered.length} Room${filtered.length !== 1 ? 's' : ''} Available · ${nights} Night${nights !== 1 ? 's' : ''}</h3>
+          <h2 class="section-title" style="font-size:1.6rem;margin-bottom:0">${filtered.length} Room${filtered.length !== 1 ? 's' : ''} Available · ${nights} Night${nights !== 1 ? 's' : ''}</h2>
           <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)} across ${Object.keys(grouped).length} destinations</div>
         </div>
       </div>
@@ -764,7 +764,7 @@ function renderAvailabilityResults(data, checkIn, checkOut, guests, propId, room
       <div class="availability-header">
         <div>
           <div class="section-eyebrow">Available Rooms · ${escHtml(propName)}</div>
-          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${rooms.length} Room${rooms.length !== 1 ? 's' : ''} · ${nights} Night${nights !== 1 ? 's' : ''}</h3>
+          <h2 class="section-title" style="font-size:1.6rem;margin-bottom:0">${rooms.length} Room${rooms.length !== 1 ? 's' : ''} · ${nights} Night${nights !== 1 ? 's' : ''}</h2>
           <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)}</div>
         </div>
       </div>
@@ -854,7 +854,7 @@ registerPage('reviews', async (container, params = {}) => {
 
         <!-- Call to Action Banner -->
         <div class="glass-card" style="margin-top:var(--space-10);text-align:center;padding:var(--space-8);background:linear-gradient(135deg,rgba(15,23,42,0.8),rgba(26,54,93,0.4));border:1px solid rgba(212,137,31,0.25);">
-          <h3 class="heading-serif" style="font-size:1.6rem;color:var(--cream-50);margin-bottom:var(--space-2);">Have You Stayed with Us?</h3>
+          <h2 class="heading-serif" style="font-size:1.6rem;color:var(--cream-50);margin-bottom:var(--space-2);">Have You Stayed with Us?</h2>
           <p class="text-muted text-sm" style="max-width:550px;margin:0 auto var(--space-4);">We value your feedback! Guests who have completed a stay can leave a verified review from their booking dashboard.</p>
           <div style="display:flex;justify-content:center;gap:var(--space-3);flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="navigateTo('dashboard')">Go to My Bookings 📋</button>
@@ -1597,7 +1597,7 @@ async function loadAdminTab(tab) {
         </div>
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3);">
-          <h3 class="heading-serif" style="font-size:1.3rem;color:var(--cream-50);">All Guest Feedback (${allRevs.length})</h3>
+          <h2 class="heading-serif" style="font-size:1.3rem;color:var(--cream-50);">All Guest Feedback (${allRevs.length})</h2>
         </div>
 
         <div class="reviews-grid" style="margin-top:0;">
