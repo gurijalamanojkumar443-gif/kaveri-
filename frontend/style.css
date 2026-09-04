@@ -2205,7 +2205,9 @@ footer {
 .ai-fab-label {
   background: linear-gradient(135deg, #fef08a, #d4891f);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .ai-fab-pulse {
