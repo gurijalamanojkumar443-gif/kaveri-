@@ -13,13 +13,14 @@ from app.routers.bookings import router as bookings_router
 from app.routers.payments import router as payments_router
 from app.routers.reviews import router as reviews_router
 from app.routers.reports import router as reports_router
+from app.routers.agent import router as agent_router
 
 app = FastAPI(
     title="Kaveri Stays API",
     description=(
         "Production-grade hotel booking API for Kaveri Stays — a 3-property chain "
         "in Coorg, Ooty, and Alleppey. Provides complete guest registration, room availability, "
-        "bookings, payments, reviews, and management reporting with JWT-based RBAC."
+        "bookings, payments, reviews, management reporting, and Kaveri AI Concierge Agent with JWT-based RBAC."
     ),
     version="1.0.0",
     contact={
@@ -31,6 +32,7 @@ app = FastAPI(
     },
     openapi_tags=[
         {"name": "Authentication", "description": "Register, login, refresh, logout, and profile."},
+        {"name": "AI Agent", "description": "Kaveri AI Concierge — natural language queries, tool execution, and booking actions."},
         {"name": "Properties", "description": "List and inspect hotel properties."},
         {"name": "Rooms", "description": "Room availability search with date-range exclusion logic."},
         {"name": "Bookings", "description": "Full booking lifecycle — create, check-in, check-out, cancel."},
@@ -122,6 +124,7 @@ app.include_router(bookings_router)
 app.include_router(payments_router)
 app.include_router(reviews_router)
 app.include_router(reports_router)
+app.include_router(agent_router)
 
 # ─── Health Check ───────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"], summary="API health check", include_in_schema=True)

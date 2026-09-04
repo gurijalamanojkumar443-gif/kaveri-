@@ -210,3 +210,14 @@ class RevenueReportResponse(BaseModel):
     total_revenue: float
     adr: float
     revpar: float
+
+# AI Agent Schemas
+from app.schemas.agent import (
+    ChatRequest,
+    ChatResponse,
+    ToolExecutionTrace,
+    PendingActionDTO,
+    ChatMessageDTO,
+    AgentToolInfo
+)
+

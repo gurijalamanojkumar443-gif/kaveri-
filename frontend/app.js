@@ -1008,6 +1008,84 @@ registerPage('reviews', async (container, params = {}) => {
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
+   PAGE: KAVERI AI CONCIERGE (Intelligent Hotel Booking Agent)
+   ───────────────────────────────────────────────────────────────────────── */
+registerPage('ai-agent', async (container) => {
+  container.innerHTML = `
+    <div class="page">
+      <div class="container" style="max-width:900px;">
+        <div style="margin-bottom:var(--space-8);padding-top:var(--space-4);text-align:center;">
+          <div class="section-eyebrow">✦ Intelligent Concierge & Booking Agent</div>
+          <h1 class="heading-display" style="font-size:2.6rem;color:var(--cream-50)">Kaveri AI Assistant</h1>
+          <p class="text-muted" style="margin-top:var(--space-2);max-width:600px;margin-left:auto;margin-right:auto;">
+            Ask questions in plain English, query real-time bookings, check your total spend, and search available sanctuary suites.
+          </p>
+        </div>
+
+        <div class="glass-card" style="padding:var(--space-6);margin-bottom:var(--space-6);background:linear-gradient(135deg,rgba(15,23,42,0.85),rgba(26,54,93,0.5));border:1px solid rgba(212,137,31,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4);margin-bottom:var(--space-4);">
+            <div style="display:flex;align-items:center;gap:var(--space-3);">
+              <div class="ai-avatar-badge" style="width:44px;height:44px;font-size:1.3rem;">✨</div>
+              <div>
+                <h2 style="font-family:var(--font-display);font-size:1.3rem;color:var(--cream-50);margin:0;">Kaveri AI Concierge</h2>
+                <div class="ai-status-indicator">
+                  <span class="ai-status-dot"></span> Online · Connected to Live PostgreSQL Database
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="resetAiSession()">🔄 Reset Session</button>
+          </div>
+
+          <div style="font-size:0.85rem;color:var(--charcoal-300);margin-bottom:var(--space-4);">
+            Try asking one of these quick prompts:
+          </div>
+          <div class="ai-suggestions-container" id="page-ai-suggestions" style="background:transparent;border:none;padding:0 0 var(--space-4) 0;">
+            <!-- Rendered by initAiConcierge -->
+          </div>
+
+          <!-- Full Page Chat Area -->
+          <div class="ai-messages-container" id="page-ai-messages" style="height:420px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-5);">
+          </div>
+
+          <!-- Input Field -->
+          <div style="margin-top:var(--space-4);">
+            <form id="page-ai-form" onsubmit="return false;" style="display:flex;gap:var(--space-2);">
+              <input
+                type="text"
+                id="page-ai-input"
+                class="ai-input-field"
+                placeholder="Type your question (e.g., 'Show my pending bookings', 'Find rooms in Coorg')..."
+                autocomplete="off"
+              />
+              <button type="submit" id="page-ai-send-btn" class="ai-send-btn">
+                <span>Send</span> ✦
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach page-specific AI chat events
+  const pageForm = document.getElementById('page-ai-form');
+  const pageInput = document.getElementById('page-ai-input');
+  if (pageForm && pageInput) {
+    pageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = pageInput.value.trim();
+      if (!text) return;
+      pageInput.value = '';
+      sendAiChatMessage(text, 'page');
+    });
+  }
+
+  // Populate prompt pills on page
+  renderPageSuggestions();
+  renderAiHistory('page');
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
    PAGE: VACANCIES (Room availability across all properties)
    ───────────────────────────────────────────────────────────────────────── */
 registerPage('vacancies', async (container) => {
@@ -2267,8 +2345,284 @@ function closeUserDropdown() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   EXPOSE FUNCTIONS TO WINDOW (for inline onclick attributes)
+   KAVERI AI CONCIERGE AGENT CLIENT LOGIC
    ───────────────────────────────────────────────────────────────────────── */
+let aiSessionId = localStorage.getItem('kaveri_ai_session_id') || ('ks_sess_' + Math.random().toString(36).substring(2, 12));
+localStorage.setItem('kaveri_ai_session_id', aiSessionId);
+let aiChatHistory = [];
+let aiSuggestionsCache = [];
+
+function initAiConcierge() {
+  // Floating FAB & Navbar button
+  document.getElementById('ai-fab-btn')?.addEventListener('click', () => toggleAiDrawer(true));
+  document.getElementById('nav-ai-agent-btn')?.addEventListener('click', (e) => {
+    // If on mobile or clicking nav, also open drawer
+    toggleAiDrawer(true);
+  });
+
+  // Drawer Controls
+  document.getElementById('ai-close-btn')?.addEventListener('click', () => toggleAiDrawer(false));
+  document.getElementById('ai-drawer-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) toggleAiDrawer(false);
+  });
+  document.getElementById('ai-reset-btn')?.addEventListener('click', resetAiSession);
+
+  // Form submit
+  const drawerForm = document.getElementById('ai-chat-form');
+  const drawerInput = document.getElementById('ai-user-input');
+  if (drawerForm && drawerInput) {
+    drawerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = drawerInput.value.trim();
+      if (!text) return;
+      drawerInput.value = '';
+      sendAiChatMessage(text, 'drawer');
+    });
+  }
+
+  // Load suggestions
+  loadAiSuggestions();
+
+  // Initial welcome message if empty
+  if (aiChatHistory.length === 0) {
+    const user = Auth.user;
+    const name = user ? user.name : 'Valued Guest';
+    aiChatHistory.push({
+      role: 'assistant',
+      content: `Namaste ${name}! ✦\n\nI am your **Kaveri AI Concierge**. How may I assist your stay today? You can ask me to check your bookings, view pending balances, calculate spending, search available rooms, or look up resort amenities.`,
+      toolTraces: [],
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    renderAiHistory();
+  }
+}
+
+async function loadAiSuggestions() {
+  try {
+    const { ok, data } = await apiJSON('/agent/suggestions');
+    if (ok && Array.isArray(data)) {
+      aiSuggestionsCache = data;
+      renderDrawerSuggestions();
+      renderPageSuggestions();
+    }
+  } catch {
+    // Fallback default suggestions
+    aiSuggestionsCache = [
+      { icon: '📋', label: 'Show my bookings', prompt: 'Show my bookings and itinerary.' },
+      { icon: '⏳', label: 'Pending bookings', prompt: 'What bookings are still pending or unpaid?' },
+      { icon: '💳', label: 'Total spending', prompt: 'How much have I spent on hotel bookings?' },
+      { icon: '🌲', label: 'Coorg availability', prompt: 'Find me a Deluxe room in Coorg for next weekend.' }
+    ];
+    renderDrawerSuggestions();
+    renderPageSuggestions();
+  }
+}
+
+function renderDrawerSuggestions() {
+  const container = document.getElementById('ai-suggestions-container');
+  if (!container || !aiSuggestionsCache.length) return;
+  container.innerHTML = aiSuggestionsCache.map(s => `
+    <button class="ai-suggestion-chip" onclick="sendAiChatMessage('${escHtml(s.prompt)}', 'drawer')">
+      <span>${s.icon}</span> ${escHtml(s.label)}
+    </button>
+  `).join('');
+}
+
+function renderPageSuggestions() {
+  const container = document.getElementById('page-ai-suggestions');
+  if (!container || !aiSuggestionsCache.length) return;
+  container.innerHTML = aiSuggestionsCache.map(s => `
+    <button class="ai-suggestion-chip" onclick="sendAiChatMessage('${escHtml(s.prompt)}', 'page')">
+      <span>${s.icon}</span> ${escHtml(s.label)}
+    </button>
+  `).join('');
+}
+
+function toggleAiDrawer(open) {
+  const overlay = document.getElementById('ai-drawer-overlay');
+  if (!overlay) return;
+  if (open) {
+    overlay.classList.remove('hidden');
+    renderAiHistory('drawer');
+    setTimeout(() => document.getElementById('ai-user-input')?.focus(), 150);
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+
+async function resetAiSession() {
+  try {
+    await apiJSON(`/agent/reset?session_id=${aiSessionId}`, { method: 'POST' });
+  } catch {}
+  aiSessionId = 'ks_sess_' + Math.random().toString(36).substring(2, 12);
+  localStorage.setItem('kaveri_ai_session_id', aiSessionId);
+  aiChatHistory = [];
+  const user = Auth.user;
+  const name = user ? user.name : 'Valued Guest';
+  aiChatHistory.push({
+    role: 'assistant',
+    content: `Session memory reset. Namaste ${name}! ✦ How can I help you today?`,
+    toolTraces: [],
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  renderAiHistory();
+  showToast('Session Reset', 'Kaveri AI conversation memory has been cleared.', 'info');
+}
+
+function formatAiMarkdown(text) {
+  if (!text) return '';
+  let html = escHtml(text);
+
+  // Bold **text**
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Italic *text*
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // Code `code`
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;color:#fef08a;">$1</code>');
+  // Bullet points
+  html = html.replace(/^[•\-\*]\s+(.*)$/gm, '<div style="display:flex;gap:6px;margin:3px 0;"><span style="color:var(--gold-300);">✦</span><div>$1</div></div>');
+  // Newlines
+  html = html.replace(/\n\n/g, '</p><p style="margin-top:8px;">');
+  html = html.replace(/\n/g, '<br/>');
+
+  return `<p>${html}</p>`;
+}
+
+function renderAiHistory(target = 'both') {
+  const targets = [];
+  if (target === 'drawer' || target === 'both') {
+    const el = document.getElementById('ai-messages-container');
+    if (el) targets.push(el);
+  }
+  if (target === 'page' || target === 'both') {
+    const el = document.getElementById('page-ai-messages');
+    if (el) targets.push(el);
+  }
+
+  targets.forEach(container => {
+    container.innerHTML = aiChatHistory.map(msg => {
+      const isUser = msg.role === 'user';
+      const tracesHTML = (msg.toolTraces && msg.toolTraces.length > 0)
+        ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">` +
+            msg.toolTraces.map(t => `<span class="ai-tool-pill">⚡ Database Tool: <code>${escHtml(t.tool_name)}</code></span>`).join('') +
+          `</div>`
+        : '';
+
+      const actionHTML = msg.pendingAction
+        ? `
+          <div class="ai-action-card">
+            <div class="ai-action-card-prompt">${escHtml(msg.pendingAction.prompt_message || 'Human confirmation required for this action:')}</div>
+            <div class="ai-action-btn-group">
+              <button class="ai-action-btn-yes" onclick="confirmAiAction('${msg.pendingAction.action_type}', ${msg.pendingAction.booking_id || 0}, true)">
+                ✓ Yes, Cancel Booking #${msg.pendingAction.booking_id || ''}
+              </button>
+              <button class="ai-action-btn-no" onclick="confirmAiAction('${msg.pendingAction.action_type}', ${msg.pendingAction.booking_id || 0}, false)">
+                ✕ No, Keep Booking
+              </button>
+            </div>
+          </div>
+        `
+        : '';
+
+      return `
+        <div class="ai-msg ${isUser ? 'ai-msg-user' : 'ai-msg-assistant'}">
+          <div class="ai-msg-bubble">
+            ${tracesHTML}
+            ${isUser ? escHtml(msg.content) : formatAiMarkdown(msg.content)}
+            ${actionHTML}
+          </div>
+          <div class="ai-msg-time">${msg.timestamp || ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+async function sendAiChatMessage(text, source = 'drawer') {
+  if (!text) return;
+
+  const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  aiChatHistory.push({
+    role: 'user',
+    content: text,
+    timestamp: userTime
+  });
+
+  // Add temporary typing indicator
+  aiChatHistory.push({
+    role: 'assistant',
+    content: '✦ Kaveri AI is thinking & querying database tools...',
+    isTyping: true,
+    timestamp: userTime
+  });
+  renderAiHistory(source === 'page' ? 'both' : 'drawer');
+
+  // Disable send buttons while thinking
+  const dSend = document.getElementById('ai-send-btn');
+  const pSend = document.getElementById('page-ai-send-btn');
+  if (dSend) dSend.disabled = true;
+  if (pSend) pSend.disabled = true;
+
+  try {
+    const token = Auth.token;
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/agent/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        message: text,
+        session_id: aiSessionId
+      })
+    });
+
+    // Remove typing bubble
+    aiChatHistory = aiChatHistory.filter(m => !m.isTyping);
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      aiChatHistory.push({
+        role: 'assistant',
+        content: `Sorry, I encountered an issue: ${errJson.error?.message || res.statusText || 'Unable to connect to AI engine.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    } else {
+      const data = await res.json();
+      if (data.session_id) {
+        aiSessionId = data.session_id;
+        localStorage.setItem('kaveri_ai_session_id', aiSessionId);
+      }
+      aiChatHistory.push({
+        role: 'assistant',
+        content: data.reply,
+        toolTraces: data.tool_traces || [],
+        pendingAction: data.pending_action || null,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+  } catch (err) {
+    aiChatHistory = aiChatHistory.filter(m => !m.isTyping);
+    aiChatHistory.push({
+      role: 'assistant',
+      content: `Network connection error: ${err.message}. Please ensure the Kaveri Stays backend is running.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+  } finally {
+    if (dSend) dSend.disabled = false;
+    if (pSend) pSend.disabled = false;
+    renderAiHistory(source === 'page' ? 'both' : 'drawer');
+  }
+}
+
+function confirmAiAction(actionType, bookingId, affirmative, source = 'drawer') {
+  const replyText = affirmative ? `Yes, please confirm cancellation for Booking #${bookingId}` : `No, keep Booking #${bookingId} active`;
+  sendAiChatMessage(replyText, source);
+}
+
 Object.assign(window, {
   Auth,
   DEMO_ACCOUNTS,
@@ -2312,13 +2666,21 @@ Object.assign(window, {
   setDashboardFilter,
   renderDashboardFilters,
   executeCancellation,
-  closeCancelModal
+  closeCancelModal,
+  toggleAiDrawer,
+  sendAiChatMessage,
+  resetAiSession,
+  confirmAiAction,
+  renderPageSuggestions
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
    INIT
    ───────────────────────────────────────────────────────────────────────── */
 function initApp() {
+  // Initialize Kaveri AI Concierge
+  initAiConcierge();
+
   // Logo & navigation links
   document.getElementById('logo-link')?.addEventListener('click', () => navigateTo('home'));
   document.getElementById('nav-properties-link')?.addEventListener('click', () => {

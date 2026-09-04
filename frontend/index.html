@@ -51,6 +51,7 @@
         <li><button class="nav-link" data-nav="reviews">Reviews ⭐</button></li>
         <li><button class="nav-link" data-nav="vacancies">Vacancies</button></li>
         <li><button class="nav-link" data-nav="dashboard">My Bookings</button></li>
+        <li><button class="nav-link nav-link-highlight" data-nav="ai-agent" id="nav-ai-agent-btn">Kaveri AI ✨</button></li>
         <li><button class="nav-link hidden" data-nav="admin" id="nav-admin-link">Admin ⚙</button></li>
       </ul>
       <div class="nav-actions">
@@ -327,6 +328,64 @@
         <button class="modal-close" id="cancel-modal-close" onclick="closeCancelModal()" aria-label="Close">✕</button>
       </div>
       <div class="modal-body" id="cancel-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- FLOATING KAVERI AI CONCIERGE LAUNCHER -->
+  <div class="ai-fab-container" id="ai-fab-container">
+    <button class="ai-fab-btn" id="ai-fab-btn" aria-label="Open Kaveri AI Concierge" title="Chat with Kaveri AI Concierge">
+      <span class="ai-fab-sparkle">✨</span>
+      <span class="ai-fab-label">Kaveri AI</span>
+      <span class="ai-fab-pulse"></span>
+    </button>
+  </div>
+
+  <!-- KAVERI AI CONCIERGE DRAWER / CHAT MODAL -->
+  <div class="ai-drawer-overlay hidden" id="ai-drawer-overlay">
+    <div class="ai-drawer" id="ai-drawer" role="dialog" aria-labelledby="ai-drawer-title" aria-modal="true">
+      <!-- Drawer Header -->
+      <div class="ai-drawer-header">
+        <div class="ai-header-left">
+          <div class="ai-avatar-badge">✨</div>
+          <div>
+            <h2 class="ai-drawer-title" id="ai-drawer-title">Kaveri AI Concierge</h2>
+            <div class="ai-status-indicator">
+              <span class="ai-status-dot"></span> Online · Connected to Database Tools
+            </div>
+          </div>
+        </div>
+        <div class="ai-header-actions">
+          <button class="btn-icon" id="ai-reset-btn" title="Reset Conversation" aria-label="Reset Conversation">🔄</button>
+          <button class="btn-icon" id="ai-close-btn" title="Close AI Assistant" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Suggestions -->
+      <div class="ai-suggestions-container" id="ai-suggestions-container">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Messages Body -->
+      <div class="ai-messages-container" id="ai-messages-container">
+        <!-- Rendered conversation -->
+      </div>
+
+      <!-- Input Bar -->
+      <div class="ai-input-wrapper">
+        <form id="ai-chat-form" onsubmit="return false;">
+          <input
+            type="text"
+            id="ai-user-input"
+            class="ai-input-field"
+            placeholder="Ask anything: 'Show my pending bookings', 'Calculate my spending'..."
+            autocomplete="off"
+            aria-label="Message Kaveri AI Concierge"
+          />
+          <button type="submit" id="ai-send-btn" class="ai-send-btn" aria-label="Send message">
+            <span>Send</span> ✦
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 
