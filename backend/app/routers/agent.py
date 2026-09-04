@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Account
+from app.models import Account, Guest
 from app.dependencies import get_current_user, get_optional_user
 from app.schemas.agent import (
     ChatRequest,
@@ -34,10 +34,29 @@ def agent_chat(
     """
     engine = get_agent_engine()
 
-    # Determine guest identity from JWT token
-    guest_id = current_user.guest_id if current_user and current_user.guest_id else (current_user.account_id if current_user else 1)
-    guest_name = current_user.name if current_user else "Valued Guest"
-    guest_email = current_user.email if current_user else None
+    # Determine guest identity strictly from JWT token
+    guest_id = None
+    guest_name = "Valued Guest"
+    guest_email = None
+
+    if current_user:
+        guest_name = current_user.name
+        guest_email = current_user.email
+        if current_user.guest_id:
+            guest_id = current_user.guest_id
+        else:
+            g = db.query(Guest).filter(Guest.email == current_user.email).first()
+            if g:
+                guest_id = g.guest_id
+                current_user.guest_id = g.guest_id
+                db.commit()
+            else:
+                new_g = Guest(name=current_user.name, email=current_user.email)
+                db.add(new_g)
+                db.flush()
+                current_user.guest_id = new_g.guest_id
+                db.commit()
+                guest_id = new_g.guest_id
 
     # Retrieve or initialize session state
     state = engine.get_or_create_state(

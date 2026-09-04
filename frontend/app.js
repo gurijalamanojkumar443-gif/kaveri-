@@ -2361,9 +2361,16 @@ function initAiConcierge() {
   });
 
   // Drawer Controls
-  document.getElementById('ai-close-btn')?.addEventListener('click', () => toggleAiDrawer(false));
+  document.getElementById('ai-close-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleAiDrawer(false);
+  });
   document.getElementById('ai-drawer-overlay')?.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) toggleAiDrawer(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') toggleAiDrawer(false);
   });
   document.getElementById('ai-reset-btn')?.addEventListener('click', resetAiSession);
 

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, and_
 
 from app.models import Booking, Room, RoomType, Property, Payment, Rate, Guest, Review
-from app.services.booking_service import calculate_stay_pricing, get_booking_financials
+from app.services.booking_service import calculate_stay_pricing, get_booking_financials, create_booking_atomic
 
 
 def get_my_bookings(
@@ -392,4 +392,150 @@ def confirm_cancellation(
         "booking_id": booking.booking_id,
         "status": "cancelled",
         "message": f"✦ Booking #{booking.booking_id} has been cancelled successfully. Your room has been released."
+    }
+
+
+def initiate_booking(
+    db: Session,
+    guest_id: Optional[int],
+    room_number: Optional[str] = None,
+    property_name_or_city: Optional[str] = None,
+    room_type: Optional[str] = None,
+    check_in: Optional[str] = None,
+    check_out: Optional[str] = None,
+    guest_count: int = 1
+) -> Dict[str, Any]:
+    """
+    Validates room availability, calculates total cost and required deposit,
+    and stages the booking for guest confirmation.
+    """
+    today = date.today()
+    if not check_in:
+        c_in = today + timedelta(days=1)
+    else:
+        try:
+            c_in = datetime.strptime(check_in.strip(), "%Y-%m-%d").date()
+        except ValueError:
+            c_in = today + timedelta(days=1)
+
+    if not check_out:
+        c_out = c_in + timedelta(days=2)
+    else:
+        try:
+            c_out = datetime.strptime(check_out.strip(), "%Y-%m-%d").date()
+        except ValueError:
+            c_out = c_in + timedelta(days=2)
+
+    if c_out <= c_in:
+        c_out = c_in + timedelta(days=1)
+
+    nights = (c_out - c_in).days
+
+    query = (
+        db.query(Room, RoomType, Property)
+        .join(RoomType, Room.room_type_id == RoomType.room_type_id)
+        .join(Property, Room.property_id == Property.property_id)
+    )
+
+    if room_number:
+        clean_num = str(room_number).replace("#", "").strip()
+        query = query.filter(Room.room_number == clean_num)
+    elif property_name_or_city:
+        term = f"%{property_name_or_city.strip()}%"
+        query = query.filter(or_(Property.name.ilike(term), Property.city.ilike(term)))
+
+    if room_type:
+        query = query.filter(RoomType.type_name.ilike(f"%{room_type.strip()}%"))
+
+    # Check for conflict
+    conflict_subq = (
+        db.query(Booking.room_id)
+        .filter(
+            Booking.status.in_(["confirmed", "checked_in"]),
+            Booking.check_in < c_out,
+            Booking.check_out > c_in
+        )
+        .subquery()
+    )
+
+    target_rooms = query.filter(~Room.room_id.in_(conflict_subq.select())).all()
+
+    if not target_rooms:
+        return {
+            "success": False,
+            "error": f"Room #{room_number or 'matching your criteria'} is currently unavailable for {c_in} to {c_out}."
+        }
+
+    r, rt, p = target_rooms[0]
+    avg_rate, total_amount = calculate_stay_pricing(db, p.property_id, rt.room_type_id, c_in, c_out)
+    deposit_amount = (total_amount * Decimal("0.20")).quantize(Decimal("0.01"))
+
+    return {
+        "success": True,
+        "room_id": r.room_id,
+        "room_number": r.room_number,
+        "property_id": p.property_id,
+        "property_name": p.name,
+        "city": p.city,
+        "room_type": rt.type_name,
+        "max_occupancy": rt.max_occupancy,
+        "check_in": c_in.strftime("%Y-%m-%d"),
+        "check_out": c_out.strftime("%Y-%m-%d"),
+        "nights": nights,
+        "guest_count": max(1, min(guest_count, rt.max_occupancy)),
+        "nightly_rate": float(avg_rate),
+        "total_cost": float(total_amount),
+        "deposit_amount": float(deposit_amount),
+        "requires_confirmation": True,
+        "confirmation_prompt": (
+            f"Reserve Room #{r.room_number} ({rt.type_name} Suite) at {p.name} ({p.city}) "
+            f"from {c_in.strftime('%Y-%m-%d')} to {c_out.strftime('%Y-%m-%d')} ({nights} nights) for ₹{total_amount:,.2f}?"
+        )
+    }
+
+
+def confirm_booking(
+    db: Session,
+    guest_id: int,
+    room_id: int,
+    check_in: str,
+    check_out: str,
+    guest_count: int = 1,
+    payment_method: str = "upi"
+) -> Dict[str, Any]:
+    """
+    Executes atomic booking creation and initial deposit in the database.
+    """
+    c_in = datetime.strptime(check_in.strip(), "%Y-%m-%d").date()
+    c_out = datetime.strptime(check_out.strip(), "%Y-%m-%d").date()
+
+    booking = create_booking_atomic(
+        db=db,
+        guest_id=guest_id,
+        room_id=room_id,
+        check_in=c_in,
+        check_out=c_out,
+        guest_count=guest_count,
+        payment_method=payment_method
+    )
+
+    room = db.query(Room, RoomType, Property).join(RoomType, Room.room_type_id == RoomType.room_type_id).join(Property, Room.property_id == Property.property_id).filter(Room.room_id == room_id).first()
+    r, rt, p = room
+    cost, paid = get_booking_financials(db, booking.booking_id)
+
+    return {
+        "success": True,
+        "booking_id": booking.booking_id,
+        "status": booking.status,
+        "room_number": r.room_number,
+        "room_type": rt.type_name,
+        "property_name": p.name,
+        "city": p.city,
+        "check_in": booking.check_in.strftime("%Y-%m-%d"),
+        "check_out": booking.check_out.strftime("%Y-%m-%d"),
+        "nights": (booking.check_out - booking.check_in).days,
+        "total_cost": float(cost),
+        "total_paid": float(paid),
+        "balance_due": float(max(Decimal("0.00"), cost - paid)),
+        "message": f"✦ Booking #{booking.booking_id} confirmed successfully for Room #{r.room_number} at {p.name}."
     }

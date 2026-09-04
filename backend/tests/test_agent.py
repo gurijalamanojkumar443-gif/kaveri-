@@ -150,3 +150,39 @@ class TestKaveriAIAgentAPI:
         resp = client.post(f"/agent/reset?session_id={sess_id}", headers=guest_headers)
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
+
+    def test_agent_unauthenticated_isolation(self):
+        # Unauthenticated request asking for spending should not leak guest 1's data
+        resp = client.post(
+            "/agent/chat",
+            json={"message": "How much have I spent on hotel bookings?"}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Log In" in data["reply"] or "Register" in data["reply"]
+        assert "₹238,003" not in data["reply"]
+
+    def test_agent_book_room_flow(self, guest_headers):
+        sess_id = "test-book-room-flow"
+        # Step 1: Initiate booking
+        resp = client.post(
+            "/agent/chat",
+            json={"message": "book 205 room", "session_id": sess_id},
+            headers=guest_headers
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "Room #205" in data["reply"] or "205" in data["reply"]
+        assert data["pending_action"] is not None
+        assert data["pending_action"]["action_type"] == "confirm_booking"
+
+        # Step 2: Confirm booking
+        resp_confirm = client.post(
+            "/agent/chat",
+            json={"message": "Yes, confirm booking", "session_id": sess_id},
+            headers=guest_headers
+        )
+        assert resp_confirm.status_code == 200
+        confirm_data = resp_confirm.json()
+        assert "Confirmed" in confirm_data["reply"] or "reserved" in confirm_data["reply"].lower()
+        assert "Booking ID" in confirm_data["reply"] or "#" in confirm_data["reply"]

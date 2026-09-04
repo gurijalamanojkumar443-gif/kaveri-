@@ -159,5 +159,67 @@ AGENT_TOOL_DEFINITIONS = [
                 "required": ["booking_id"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "initiate_booking",
+            "description": "Prepare a room reservation for the guest, verify availability and pricing, and stage for confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "room_number": {
+                        "type": "string",
+                        "description": "Room number (e.g. '205', '302')"
+                    },
+                    "property_name_or_city": {
+                        "type": "string",
+                        "description": "Optional resort or city name (Coorg, Ooty, Alleppey)"
+                    },
+                    "check_in": {
+                        "type": "string",
+                        "description": "Check-in date in YYYY-MM-DD format"
+                    },
+                    "check_out": {
+                        "type": "string",
+                        "description": "Check-out date in YYYY-MM-DD format"
+                    },
+                    "guest_count": {
+                        "type": "integer",
+                        "description": "Number of guests (default 1)"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "confirm_booking",
+            "description": "Atomically finalize and create the room reservation and deposit in the database after user confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "room_id": {
+                        "type": "integer",
+                        "description": "Room ID to book"
+                    },
+                    "check_in": {
+                        "type": "string",
+                        "description": "Check-in date YYYY-MM-DD"
+                    },
+                    "check_out": {
+                        "type": "string",
+                        "description": "Check-out date YYYY-MM-DD"
+                    },
+                    "guest_count": {
+                        "type": "integer",
+                        "description": "Number of guests"
+                    }
+                },
+                "required": ["room_id", "check_in", "check_out"]
+            }
+        }
     }
 ]
