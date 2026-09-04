@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Query, Path, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
-from app.models import Booking, Room, Property, Guest, Account
+from app.models import Booking, Room, Property, Guest, Account, Review
 from app.schemas import (
-    CreateBookingRequest, BookingDetailResponse, PaginatedBookingsResponse, ErrorResponse
+    CreateBookingRequest, BookingDetailResponse, PaginatedBookingsResponse, ErrorResponse, ReviewResponse
 )
 from app.services.booking_service import (
     create_booking_atomic, get_booking_financials, transition_booking_state
@@ -131,6 +131,18 @@ def list_bookings(
     """
     rows = db.execute(text(data_sql), params).fetchall()
 
+    booking_ids = [r[0] for r in rows]
+    reviews_map = {}
+    if booking_ids:
+        for rev in db.query(Review).filter(Review.booking_id.in_(booking_ids)).all():
+            reviews_map[rev.booking_id] = ReviewResponse(
+                review_id=rev.review_id,
+                booking_id=rev.booking_id,
+                rating=rev.rating,
+                comment=rev.comment,
+                review_date=rev.review_date
+            )
+
     items = []
     for r in rows:
         b_id = r[0]
@@ -147,7 +159,8 @@ def list_bookings(
             guest_count=r[8],
             status=r[9],
             total_amount=float(total_cost),
-            amount_paid=float(total_paid)
+            amount_paid=float(total_paid),
+            review=reviews_map.get(b_id)
         ))
 
     return PaginatedBookingsResponse(
@@ -266,6 +279,17 @@ def get_booking_by_id(
 
     total_cost, total_paid = get_booking_financials(db, booking.booking_id)
 
+    rev = db.query(Review).filter(Review.booking_id == booking.booking_id).first()
+    review_resp = None
+    if rev:
+        review_resp = ReviewResponse(
+            review_id=rev.review_id,
+            booking_id=rev.booking_id,
+            rating=rev.rating,
+            comment=rev.comment,
+            review_date=rev.review_date
+        )
+
     return BookingDetailResponse(
         booking_id=booking.booking_id,
         guest_id=booking.guest_id,
@@ -278,7 +302,8 @@ def get_booking_by_id(
         guest_count=booking.guest_count,
         status=booking.status,
         total_amount=float(total_cost),
-        amount_paid=float(total_paid)
+        amount_paid=float(total_paid),
+        review=review_resp
     )
 
 @router.post(

@@ -63,6 +63,8 @@ class PropertyResponse(BaseModel):
     name: str
     city: str
     stars: Optional[int] = None
+    average_rating: Optional[float] = None
+    total_reviews: Optional[int] = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,6 +73,8 @@ class PropertyDetailResponse(BaseModel):
     name: str
     city: str
     stars: Optional[int] = None
+    average_rating: Optional[float] = None
+    total_reviews: Optional[int] = 0
     room_types: List[RoomTypeResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
@@ -88,6 +92,61 @@ class AvailableRoomResponse(BaseModel):
     total_rate: float
 
     model_config = ConfigDict(from_attributes=True)
+
+# Review Schemas
+class CreateReviewRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = None
+
+class ReviewResponse(BaseModel):
+    review_id: int
+    booking_id: int
+    rating: int
+    comment: Optional[str] = None
+    review_date: Optional[date] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PropertyReviewItem(BaseModel):
+    review_id: int
+    booking_id: int
+    rating: int
+    comment: Optional[str] = None
+    review_date: Optional[date] = None
+    guest_name: str
+    guest_city: Optional[str] = None
+    room_type_name: Optional[str] = None
+    property_id: int
+    property_name: str
+    city: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PropertyReviewsSummary(BaseModel):
+    property_id: Optional[int] = None
+    property_name: Optional[str] = None
+    city: Optional[str] = None
+    average_rating: float
+    total_reviews: int
+    rating_distribution: dict[int, int]
+    reviews: List[PropertyReviewItem] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ResortReviewCard(BaseModel):
+    property_id: int
+    property_name: str
+    city: str
+    stars: Optional[int] = None
+    average_rating: float
+    total_reviews: int
+    top_comment: Optional[str] = None
+
+class ChainReviewStatsResponse(BaseModel):
+    overall_average_rating: float
+    total_reviews: int
+    resorts: List[ResortReviewCard]
+    recent_reviews: List[PropertyReviewItem]
 
 # Booking Schemas
 class CreateBookingRequest(BaseModel):
@@ -111,6 +170,7 @@ class BookingDetailResponse(BaseModel):
     status: str
     total_amount: float
     amount_paid: float
+    review: Optional[ReviewResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -132,20 +192,6 @@ class PaymentResponse(BaseModel):
     method: str
     payment_date: date
     idempotency_key: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-# Review Schemas
-class CreateReviewRequest(BaseModel):
-    rating: int = Field(..., ge=1, le=5)
-    comment: Optional[str] = None
-
-class ReviewResponse(BaseModel):
-    review_id: int
-    booking_id: int
-    rating: int
-    comment: Optional[str] = None
-    review_date: Optional[date] = None
 
     model_config = ConfigDict(from_attributes=True)
 

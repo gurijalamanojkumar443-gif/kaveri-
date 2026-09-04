@@ -49,11 +49,21 @@ CROSS JOIN (
 --3.12
 INSERT INTO review (booking_id, rating, comment)
 VALUES
-    (2, 5, 'Excellent stay.'),
-    (4, 4, 'Very comfortable and clean.'),
-    (7, 5, 'Friendly staff and good service.'),
-    (10, 3, 'Would definitely visit again.'),
-    (14, 5, 'Excellent stay.');
+    (1, 5, 'The view of the Nilgiri clouds from our balcony was sheer magic! Cozy fireplace and world-class hospitality.'),
+    (2, 5, 'Perched at 7,200 feet, Kaveri Hilltop is the ultimate luxury getaway. The Victorian high tea and tea garden tour were unforgettable.'),
+    (3, 5, 'Tranquil emerald waters and exceptional hospitality. The sunset private houseboat cruise was pure bliss.'),
+    (4, 5, 'Waking up to the Cauvery River and the aroma of fresh estate coffee is unmatched. The Kodava cuisine was extraordinary!'),
+    (7, 5, 'Riverfront villa with private plunge pool was stunning. Staff went above and beyond to organize our plantation safari.'),
+    (10, 4, 'Very serene retreat by the backwaters. Fresh coastal seafood dining and the Ayurvedic herbal spa were revitalizing.'),
+    (13, 5, 'Traditional Kerala architecture with five-star luxury. Sunrise yoga on the wooden lagoon deck is a must-do.'),
+    (14, 5, 'Stunning tea valley views, roaring hearths, and immaculate service. Truly one of the finest heritage stays in India.'),
+    (17, 5, 'Surrounded by 45 acres of coffee plantations. The guided wildlife trail and riverside candlelight dinner made our anniversary unforgettable.'),
+    (18, 5, 'Gliding through Alleppey backwaters on their cedar houseboat with a personal chef was the highlight of our Kerala trip.'),
+    (20, 4, 'Delightful colonial charm, eucalyptus crisp air, and attentive staff. Looking forward to returning next winter.'),
+    (21, 5, 'Spectacular backwater sunset vistas. The plunge pool suite and coconut grove surroundings felt like paradise.'),
+    (23, 5, 'Pure luxury in the Coorg rainforest. Hearing the river flow while enjoying authentic filter coffee was heavenly.'),
+    (24, 5, 'Outstanding hilltop panorama! The private heated jacuzzi overlooking the valley at dusk was breathtaking.'),
+    (25, 4, 'Exceptional heritage ambience, lavish buffet spreads, and wonderfully warm hospitality from the entire team.');
 SELECT COUNT(*) AS total_reviews
 FROM review;
 

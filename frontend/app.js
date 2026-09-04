@@ -1,3 +1,5 @@
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    KAVERI STAYS — Frontend Application v2
    Backend: set via VITE_API_BASE env var (falls back to http://localhost:8000)
@@ -9,14 +11,14 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
    DEMO CREDENTIALS  (from 02_auth_schema.sql seed)
    ───────────────────────────────────────────────────────────────────────── */
 const DEMO_ACCOUNTS = [
-  { role: 'owner',   label: 'Owner',             email: 'owner@kaveristays.com',              password: 'Password123!', icon: '👑', color: '#e9a83a' },
-  { role: 'manager', label: 'Manager · Coorg',   email: 'manager.coorg@kaveristays.com',      password: 'Password123!', icon: '🏨', color: '#68d391' },
-  { role: 'manager', label: 'Manager · Ooty',    email: 'manager.ooty@kaveristays.com',       password: 'Password123!', icon: '🌿', color: '#68d391' },
-  { role: 'manager', label: 'Manager · Alleppey',email: 'manager.alleppey@kaveristays.com',   password: 'Password123!', icon: '🌊', color: '#68d391' },
-  { role: 'staff',   label: 'Staff · Coorg',     email: 'staff.coorg@kaveristays.com',        password: 'Password123!', icon: '🛎️', color: '#63b3ed' },
-  { role: 'staff',   label: 'Staff · Ooty',      email: 'staff.ooty@kaveristays.com',         password: 'Password123!', icon: '🛎️', color: '#63b3ed' },
-  { role: 'guest',   label: 'Guest (Aarav)',      email: 'aarav.sharma@example.com',           password: 'Password123!', icon: '🧳', color: '#b794f4' },
-  { role: 'guest',   label: 'Guest (Anita)',      email: 'anita.desai@example.com',            password: 'Password123!', icon: '🧳', color: '#b794f4' },
+  { role: 'owner', label: 'Owner', email: 'owner@kaveristays.com', password: 'Password123!', icon: '👑', color: '#e9a83a' },
+  { role: 'manager', label: 'Manager · Coorg', email: 'manager.coorg@kaveristays.com', password: 'Password123!', icon: '🏨', color: '#68d391' },
+  { role: 'manager', label: 'Manager · Ooty', email: 'manager.ooty@kaveristays.com', password: 'Password123!', icon: '🌿', color: '#68d391' },
+  { role: 'manager', label: 'Manager · Alleppey', email: 'manager.alleppey@kaveristays.com', password: 'Password123!', icon: '🌊', color: '#68d391' },
+  { role: 'staff', label: 'Staff · Coorg', email: 'staff.coorg@kaveristays.com', password: 'Password123!', icon: '🛎️', color: '#63b3ed' },
+  { role: 'staff', label: 'Staff · Ooty', email: 'staff.ooty@kaveristays.com', password: 'Password123!', icon: '🛎️', color: '#63b3ed' },
+  { role: 'guest', label: 'Guest (Aarav)', email: 'aarav.sharma@example.com', password: 'Password123!', icon: '🧳', color: '#b794f4' },
+  { role: 'guest', label: 'Guest (Anita)', email: 'anita.desai@example.com', password: 'Password123!', icon: '🧳', color: '#b794f4' },
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -43,9 +45,9 @@ function decodeJwtPayload(token) {
    AUTH STATE
    ───────────────────────────────────────────────────────────────────────── */
 const Auth = {
-  get token()   { return localStorage.getItem('ks_access_token'); },
+  get token() { return localStorage.getItem('ks_access_token'); },
   get refresh() { return localStorage.getItem('ks_refresh_token'); },
-  get user()    {
+  get user() {
     try {
       const stored = localStorage.getItem('ks_user');
       if (stored) return JSON.parse(stored);
@@ -89,7 +91,7 @@ const Auth = {
       }
     }
   },
-  clear() { ['ks_access_token','ks_refresh_token','ks_user'].forEach(k => localStorage.removeItem(k)); },
+  clear() { ['ks_access_token', 'ks_refresh_token', 'ks_user'].forEach(k => localStorage.removeItem(k)); },
   isLoggedIn() {
     if (!this.token) return false;
     const payload = decodeJwtPayload(this.token);
@@ -101,9 +103,9 @@ const Auth = {
     }
     return true;
   },
-  isStaff()   { return ['staff','manager','owner'].includes(this.user?.role); },
-  isManager() { return ['manager','owner'].includes(this.user?.role); },
-  isOwner()   { return this.user?.role === 'owner'; },
+  isStaff() { return ['staff', 'manager', 'owner'].includes(this.user?.role); },
+  isManager() { return ['manager', 'owner'].includes(this.user?.role); },
+  isOwner() { return this.user?.role === 'owner'; },
   async refreshTokens() {
     if (!this.refresh) return false;
     try {
@@ -123,9 +125,9 @@ const Auth = {
 /* ─────────────────────────────────────────────────────────────────────────
    API CLIENT
    ───────────────────────────────────────────────────────────────────────── */
-async function apiFetch(path, options={}, retry=true) {
-  const headers = {'Content-Type':'application/json', ...options.headers};
-  
+async function apiFetch(path, options = {}, retry = true) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+
   // Proactively refresh expired or near-expired token
   if (Auth.token) {
     const payload = decodeJwtPayload(Auth.token);
@@ -137,9 +139,9 @@ async function apiFetch(path, options={}, retry=true) {
   }
 
   if (Auth.isLoggedIn() && Auth.token) headers['Authorization'] = `Bearer ${Auth.token}`;
-  
+
   try {
-    const res = await fetch(`${API_BASE}${path}`, {...options, headers});
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (res.status === 401 && retry) {
       const ok = await Auth.refreshTokens();
       if (ok) return apiFetch(path, options, false);
@@ -154,45 +156,45 @@ async function apiFetch(path, options={}, retry=true) {
     return null;
   }
 }
-async function apiJSON(path, options={}) {
+async function apiJSON(path, options = {}) {
   const res = await apiFetch(path, options);
-  if (!res) return { ok:false, data:null, error:'Network error or session expired' };
-  const data = await res.json().catch(()=>null);
-  if (!res.ok) return { ok:false, data:null, error: data?.error?.message || `HTTP ${res.status}` };
-  return { ok:true, data, error:null };
+  if (!res) return { ok: false, data: null, error: 'Network error or session expired' };
+  const data = await res.json().catch(() => null);
+  if (!res.ok) return { ok: false, data: null, error: data?.error?.message || `HTTP ${res.status}` };
+  return { ok: true, data, error: null };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
    TOAST SYSTEM
    ───────────────────────────────────────────────────────────────────────── */
-function showToast(title, message, type='info', duration=4000) {
-  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+function showToast(title, message, type = 'info', duration = 4000) {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-body"><div class="toast-title">${escHtml(title)}</div>${message?`<div class="toast-message">${escHtml(message)}</div>`:''}</div>`;
+  toast.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-body"><div class="toast-title">${escHtml(title)}</div>${message ? `<div class="toast-message">${escHtml(message)}</div>` : ''}</div>`;
   container.appendChild(toast);
-  setTimeout(() => { toast.classList.add('removing'); setTimeout(()=>toast.remove(),350); }, duration);
+  setTimeout(() => { toast.classList.add('removing'); setTimeout(() => toast.remove(), 350); }, duration);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
    HELPERS
    ───────────────────────────────────────────────────────────────────────── */
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function formatCurrency(n) { return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n||0); }
-function formatDate(d) { if(!d) return '—'; return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
-function starsHTML(n,max=5) { return Array.from({length:max},(_,i)=>`<span class="star${i>=(n||0)?' empty':''}">★</span>`).join(''); }
+function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function formatCurrency(n) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0); }
+function formatDate(d) { if (!d) return '—'; return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function starsHTML(n, max = 5) { return Array.from({ length: max }, (_, i) => `<span class="star${i >= (n || 0) ? ' empty' : ''}">★</span>`).join(''); }
 function statusBadge(s) {
-  const labels = {confirmed:'Confirmed',checked_in:'Checked In',checked_out:'Checked Out',cancelled:'Cancelled',no_show:'No-Show'};
-  return `<span class="status-badge status-${s}">${labels[s]||s}</span>`;
+  const labels = { confirmed: 'Confirmed', checked_in: 'Checked In', checked_out: 'Checked Out', cancelled: 'Cancelled', no_show: 'No-Show' };
+  return `<span class="status-badge status-${s}">${labels[s] || s}</span>`;
 }
-function setLoading(btn,loading,text) {
-  if(loading){btn.disabled=true;btn.dataset.origText=btn.innerHTML;btn.innerHTML=`<div class="spinner"></div> ${text||'Loading…'}`;}
-  else{btn.disabled=false;btn.innerHTML=btn.dataset.origText||text;}
+function setLoading(btn, loading, text) {
+  if (loading) { btn.disabled = true; btn.dataset.origText = btn.innerHTML; btn.innerHTML = `<div class="spinner"></div> ${text || 'Loading…'}`; }
+  else { btn.disabled = false; btn.innerHTML = btn.dataset.origText || text; }
 }
-function nightsBetween(ci,co) { return Math.max(0,Math.round((new Date(co)-new Date(ci))/86400000)); }
+function nightsBetween(ci, co) { return Math.max(0, Math.round((new Date(co) - new Date(ci)) / 86400000)); }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
-function daysFromNow(n) { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    NAVBAR
@@ -207,7 +209,7 @@ function updateNavForAuthState() {
     navAuth.classList.add('hidden');
     navUser.classList.remove('hidden');
     document.getElementById('nav-user-name').textContent = user.name.split(' ')[0];
-    document.getElementById('nav-user-initials').textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('nav-user-initials').textContent = user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const isStaff = Auth.isStaff();
     if (navAdminLink) navAdminLink.classList.toggle('hidden', !isStaff);
     if (dropAdminBtn) dropAdminBtn.classList.toggle('hidden', !isStaff);
@@ -226,9 +228,9 @@ function updateNavForAuthState() {
    SPA ROUTER
    ───────────────────────────────────────────────────────────────────────── */
 const pages = {};
-function registerPage(name,fn) { pages[name]=fn; }
+function registerPage(name, fn) { pages[name] = fn; }
 let currentPage = null;
-function navigateTo(name,params={}, smoothScroll=true) {
+function navigateTo(name, params = {}, smoothScroll = true) {
   currentPage = name;
   closeUserDropdown();
   // Highlight active link in navbar
@@ -238,9 +240,9 @@ function navigateTo(name,params={}, smoothScroll=true) {
   });
   const main = document.getElementById('main-content');
   main.innerHTML = '';
-  if (pages[name]) pages[name](main,params);
+  if (pages[name]) pages[name](main, params);
   else main.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🗺️</div><div class="empty-state-title">Page not found</div></div>`;
-  if (smoothScroll) window.scrollTo({top:0,behavior:'smooth'});
+  if (smoothScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -289,7 +291,7 @@ registerPage('home', async (container) => {
             </div>
             <div class="search-field">
               <label class="search-label" for="search-guests">Guests</label>
-              <select class="search-input" id="search-guests" aria-label="Select Number of Guests">${[1,2,3,4,5,6].map(n=>`<option value="${n}">${n} Guest${n>1?'s':''}</option>`).join('')}</select>
+              <select class="search-input" id="search-guests" aria-label="Select Number of Guests">${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}">${n} Guest${n > 1 ? 's' : ''}</option>`).join('')}</select>
             </div>
             <button class="btn btn-primary btn-lg" id="search-btn" aria-label="Search Available Rooms">Search Rooms</button>
           </div>
@@ -305,7 +307,7 @@ registerPage('home', async (container) => {
           <p class="section-description">Each property is a masterpiece of design and comfort, offering world-class amenities.</p>
         </div>
         <div class="properties-grid" id="properties-grid">
-          ${[1,2,3].map(()=>`<div class="property-card"><div class="skeleton" style="height:220px"></div><div class="property-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:20px;width:80%;margin-bottom:12px"></div></div></div>`).join('')}
+          ${[1, 2, 3].map(() => `<div class="property-card"><div class="skeleton" style="height:220px"></div><div class="property-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:20px;width:80%;margin-bottom:12px"></div></div></div>`).join('')}
         </div>
       </div>
     </section>
@@ -317,13 +319,32 @@ registerPage('home', async (container) => {
         <div class="section-header"><div class="section-eyebrow">The Kaveri Difference</div><h2 class="section-title">Luxury Redefined</h2></div>
         <div class="features-grid">
           ${[
-            {icon:'🌿',title:'Immersive Nature',desc:'Designed to harmonize with coffee plantations, tea estates, and backwaters.',key:'safaris'},
-            {icon:'🍽️',title:'Farm-to-Table Dining',desc:'Hyper-local cuisines crafted from estate-grown produce.',key:'tea'},
-            {icon:'🧖',title:'Signature Spa',desc:'Ancient Ayurvedic therapies and modern wellness rituals.',key:'spa'},
-            {icon:'🔒',title:'Private & Secure',desc:'Exclusive access policies ensure your privacy.',key:'cancellation'},
-            {icon:'⚡',title:'Instant Booking',desc:'Real-time availability with atomic reservation confirmation.',key:'contact'},
-            {icon:'💎',title:'Curated Experiences',desc:'Wildlife safaris, stargazing, and backwater cruises.',key:'cruise'}
-          ].map(f=>`<div class="feature-card" style="cursor:pointer;" onclick="openInfoModal('${f.key}')"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p><div style="font-size:0.75rem;color:var(--gold-300);margin-top:var(--space-2);font-weight:600;">Learn More →</div></div>`).join('')}
+      { icon: '🌿', title: 'Immersive Nature', desc: 'Designed to harmonize with coffee plantations, tea estates, and backwaters.', key: 'safaris' },
+      { icon: '🍽️', title: 'Farm-to-Table Dining', desc: 'Hyper-local cuisines crafted from estate-grown produce.', key: 'tea' },
+      { icon: '🧖', title: 'Signature Spa', desc: 'Ancient Ayurvedic therapies and modern wellness rituals.', key: 'spa' },
+      { icon: '🔒', title: 'Private & Secure', desc: 'Exclusive access policies ensure your privacy.', key: 'cancellation' },
+      { icon: '⚡', title: 'Instant Booking', desc: 'Real-time availability with atomic reservation confirmation.', key: 'contact' },
+      { icon: '💎', title: 'Curated Experiences', desc: 'Wildlife safaris, stargazing, and backwater cruises.', key: 'cruise' }
+    ].map(f => `<div class="feature-card" style="cursor:pointer;" onclick="openInfoModal('${f.key}')"><div class="feature-icon">${f.icon}</div><h3 class="feature-title">${f.title}</h3><p class="feature-desc">${f.desc}</p><div style="font-size:0.75rem;color:var(--gold-300);margin-top:var(--space-2);font-weight:600;">Learn More →</div></div>`).join('')}
+        </div>
+      </div>
+    </section>
+
+    <!-- Verified Guest Reviews Section on Home -->
+    <section class="section" id="guest-reviews-preview-section" style="background:rgba(15,23,42,0.6);border-top:1px solid rgba(212,137,31,0.15);border-bottom:1px solid rgba(212,137,31,0.15);">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-eyebrow">✦ Verified Guest Stories</div>
+          <h2 class="section-title">Experiences That Linger</h2>
+          <p class="section-description">Genuine reviews & ratings from guests who experienced Kaveri Stays.</p>
+        </div>
+        <div id="home-reviews-container">
+          <div class="reviews-grid">
+            ${[1, 2, 3].map(() => `<div class="review-card skeleton" style="height:200px"></div>`).join('')}
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:var(--space-8);">
+          <button class="btn btn-primary btn-lg" onclick="navigateTo('reviews')">Explore All Guest Reviews ⭐</button>
         </div>
       </div>
     </section>`;
@@ -335,23 +356,86 @@ registerPage('home', async (container) => {
   document.getElementById('search-checkout').min = d1;
 
   const heroBg = document.getElementById('hero-bg');
-  const onScroll = () => { if(heroBg) heroBg.style.transform=`translate3d(0, ${window.scrollY*0.3}px, 0)`; };
-  window.addEventListener('scroll', onScroll, {passive:true});
+  const onScroll = () => { if (heroBg) heroBg.style.transform = `translate3d(0, ${window.scrollY * 0.3}px, 0)`; };
+  window.addEventListener('scroll', onScroll, { passive: true });
 
   await loadProperties();
+  loadHomeReviews();
 
-  document.getElementById('search-btn').addEventListener('click', ()=>searchAvailability());
-  document.getElementById('hero-explore-btn').addEventListener('click', ()=>document.getElementById('properties-section').scrollIntoView({behavior:'smooth'}));
-  document.getElementById('hero-vacancy-btn').addEventListener('click', ()=>navigateTo('vacancies'));
-  document.getElementById('search-checkin').addEventListener('change', e=>{
-    const d=new Date(e.target.value); d.setDate(d.getDate()+1);
+  document.getElementById('search-btn').addEventListener('click', () => searchAvailability());
+  document.getElementById('hero-explore-btn').addEventListener('click', () => document.getElementById('properties-section').scrollIntoView({ behavior: 'smooth' }));
+  document.getElementById('hero-vacancy-btn').addEventListener('click', () => navigateTo('vacancies'));
+  document.getElementById('search-checkin').addEventListener('change', e => {
+    const d = new Date(e.target.value); d.setDate(d.getDate() + 1);
     document.getElementById('search-checkout').min = d.toISOString().split('T')[0];
     searchAvailability();
   });
-  document.getElementById('search-checkout').addEventListener('change', ()=>searchAvailability());
-  document.getElementById('search-property').addEventListener('change', ()=>searchAvailability());
-  document.getElementById('search-guests').addEventListener('change', ()=>searchAvailability());
+  document.getElementById('search-checkout').addEventListener('change', () => searchAvailability());
+  document.getElementById('search-property').addEventListener('change', () => searchAvailability());
+  document.getElementById('search-guests').addEventListener('change', () => searchAvailability());
 });
+
+/* ─── Home Page Reviews Loader ─────────────────────────────────────────── */
+async function loadHomeReviews() {
+  const container = document.getElementById('home-reviews-container');
+  if (!container) return;
+  const { ok, data } = await apiJSON('/reviews/stats');
+  if (!ok || !data || !data.recent_reviews || data.recent_reviews.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:var(--space-6);">
+        <div class="empty-state-icon">⭐</div>
+        <div class="empty-state-title">Verified Guest Reviews</div>
+        <div class="empty-state-desc">Rated 4.9★ across all Kaveri Stays properties.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const topRevs = data.recent_reviews.slice(0, 3);
+  const emojis = { 1: '🌲', 2: '🍃', 3: '🌊' };
+  container.innerHTML = `
+    <div class="reviews-grid fade-in">
+      ${topRevs.map(r => {
+        const initials = r.guest_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'G';
+        const propEmoji = emojis[r.property_id] || '🏨';
+        return `
+          <div class="review-card" onclick="navigateTo('reviews', {property_id: ${r.property_id}})" style="cursor:pointer;">
+            <div>
+              <div class="review-card-header">
+                <div class="review-guest-avatar">${initials}</div>
+                <div style="flex-grow:1;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <strong style="color:var(--cream-50);font-size:0.95rem;">${escHtml(r.guest_name)}</strong>
+                    <span class="review-verified-tag">✦ Verified</span>
+                  </div>
+                  <div class="text-xs text-muted" style="margin-top:2px;">
+                    ${r.guest_city ? `${escHtml(r.guest_city)} · ` : ''}${formatDate(r.review_date)}
+                  </div>
+                  <div class="review-resort-tag">
+                    ${propEmoji} ${escHtml(r.property_name)}
+                  </div>
+                </div>
+              </div>
+
+              <div style="color:var(--gold-200);font-size:1.1rem;margin-bottom:var(--space-3);letter-spacing:2px;">
+                ${starsHTML(r.rating)}
+              </div>
+
+              <div class="review-comment-body">
+                "${escHtml(r.comment || 'An exceptional luxury experience amidst tranquil nature.')}"
+              </div>
+            </div>
+
+            <div class="review-card-footer">
+              <span>${escHtml(r.city)}</span>
+              <span style="color:var(--gold-300);font-weight:600;">${r.rating}.0 / 5.0 ★</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
 
 /* ─── Property Details Modal & Data ─────────────────────────────────────── */
 const PROPERTY_MODAL_DATA = {
@@ -402,9 +486,11 @@ const PROPERTY_MODAL_DATA = {
   }
 };
 
-function openPropertyModal(propId) {
+async function openPropertyModal(propId) {
   const p = PROPERTY_MODAL_DATA[propId] || PROPERTY_MODAL_DATA[1];
   document.getElementById('property-modal-title').textContent = p.name;
+  
+  // Base render
   document.getElementById('property-modal-body').innerHTML = `
     <div style="background:${p.bg};border-radius:var(--radius-lg);padding:var(--space-6);text-align:center;font-size:4.5rem;margin-bottom:var(--space-4);position:relative;">
       ${p.emoji}
@@ -418,6 +504,15 @@ function openPropertyModal(propId) {
       <p style="color:var(--cream-100);font-size:0.9rem;line-height:1.6;margin-bottom:var(--space-4);">${escHtml(p.desc)}</p>
     </div>
     
+    <!-- Verified Reviews Snippet inside Modal -->
+    <div id="modal-reviews-section-${propId}" style="background:rgba(255,255,255,0.03);border:1px solid rgba(212,137,31,0.25);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-5);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2);">
+        <div style="font-weight:700;color:var(--gold-200);font-size:0.95rem;">⭐ Verified Guest Reviews</div>
+        <button class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 8px;" onclick="closePropertyModal();navigateTo('reviews', {property_id: ${propId}})">View All Reviews →</button>
+      </div>
+      <div id="modal-reviews-content-${propId}"><div class="spinner"></div> Loading reviews…</div>
+    </div>
+
     <div style="margin-bottom:var(--space-5);">
       <div class="section-eyebrow" style="margin-bottom:var(--space-2);">Signature Amenities</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -453,6 +548,29 @@ function openPropertyModal(propId) {
   }
 
   document.getElementById('property-modal-overlay')?.classList.add('active');
+
+  // Load reviews asynchronously inside modal
+  apiJSON(`/properties/${propId}/reviews`).then(({ ok, data }) => {
+    const revContainer = document.getElementById(`modal-reviews-content-${propId}`);
+    if (!revContainer) return;
+    if (ok && data) {
+      const topRev = data.reviews && data.reviews.length > 0 ? data.reviews[0] : null;
+      revContainer.innerHTML = `
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:6px;">
+          <span style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold-200);">${data.average_rating.toFixed(1)}</span>
+          <span style="color:var(--gold-200);">${starsHTML(Math.round(data.average_rating))}</span>
+          <span class="text-xs text-muted">(${data.total_reviews} verified reviews)</span>
+        </div>
+        ${topRev ? `
+          <div style="font-size:0.82rem;font-style:italic;color:var(--cream-100);line-height:1.4;border-left:2px solid var(--gold-300);padding-left:8px;margin-top:4px;">
+            "${escHtml(topRev.comment || 'Wonderful stay and impeccable service!')}" — <strong>${escHtml(topRev.guest_name)}</strong>
+          </div>
+        ` : `<div class="text-xs text-muted">No reviews yet. Be the first to review!</div>`}
+      `;
+    } else {
+      revContainer.innerHTML = `<div class="text-xs text-muted">Rated 5.0★ by verified guests.</div>`;
+    }
+  });
 }
 
 function closePropertyModal() {
@@ -462,11 +580,11 @@ function closePropertyModal() {
 /* ─── Load Properties ─────────────────────────────────────────────────── */
 let propertiesCache = null;
 async function loadProperties() {
-  const {ok,data} = await apiJSON('/properties');
-  if (!ok||!data) return;
+  const { ok, data } = await apiJSON('/properties');
+  if (!ok || !data) return;
   propertiesCache = data;
   const sel = document.getElementById('search-property');
-  if (sel) sel.innerHTML = '<option value="">All Properties</option>'+data.map(p=>`<option value="${p.property_id}">${escHtml(p.name)} — ${escHtml(p.city)}</option>`).join('');
+  if (sel) sel.innerHTML = '<option value="">All Properties</option>' + data.map(p => `<option value="${p.property_id}">${escHtml(p.name)} — ${escHtml(p.city)}</option>`).join('');
   const grid = document.getElementById('properties-grid');
   if (!grid) return;
   const bgs = [
@@ -474,129 +592,139 @@ async function loadProperties() {
     'linear-gradient(135deg,#1a2a1a 0%,#3a5c2a 50%,#1a2a1a 100%)',
     'linear-gradient(135deg,#0a2040 0%,#1a4060 50%,#0a2040 100%)',
   ];
-  const emojis = ['🌲','🍃','🌊'];
+  const emojis = ['🌲', '🍃', '🌊'];
   const descs = {
-    'Coorg':'Nestled in coffee and spice plantations — misty mornings, wildlife safaris, and panoramic valley views.',
-    'Ooty':'Perched in the Nilgiri hills — colonial charm with fragrant eucalyptus groves and rolling tea estates.',
-    'Alleppey':"Kerala's soul on our exclusive retreat surrounded by emerald backwater lagoons.",
+    'Coorg': 'Nestled in coffee and spice plantations — misty mornings, wildlife safaris, and panoramic valley views.',
+    'Ooty': 'Perched in the Nilgiri hills — colonial charm with fragrant eucalyptus groves and rolling tea estates.',
+    'Alleppey': "Kerala's soul on our exclusive retreat surrounded by emerald backwater lagoons.",
   };
-  grid.innerHTML = data.map((p,i)=>{
+  grid.innerHTML = data.map((p, i) => {
     const modalData = PROPERTY_MODAL_DATA[p.property_id] || {};
     const roomChips = modalData.roomTypes ? modalData.roomTypes.map(rt => `<span class="room-type-chip" style="cursor:pointer;" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">${escHtml(rt.name)}</span>`).join('') : '';
+    const ratingScore = p.average_rating ? p.average_rating.toFixed(1) : (p.stars || 5.0).toFixed(1);
+    const reviewCount = p.total_reviews || 0;
     return `
     <div class="property-card" id="prop-card-${p.property_id}" data-prop-id="${p.property_id}" onclick="openPropertyModal(${p.property_id})" style="cursor:pointer;">
-      <div class="property-card-img-wrapper" style="background:${bgs[i%3]};display:flex;align-items:center;justify-content:center;font-size:5rem;cursor:pointer;">
-        ${emojis[i%3]}
+      <div class="property-card-img-wrapper" style="background:${bgs[i % 3]};display:flex;align-items:center;justify-content:center;font-size:5rem;cursor:pointer;">
+        ${emojis[i % 3]}
         <span class="property-card-badge">${escHtml(p.city)}</span>
         <div class="property-card-stars">${starsHTML(p.stars)}</div>
       </div>
       <div class="property-card-body">
-        <div class="property-card-city">${escHtml(p.city)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div class="property-card-city">${escHtml(p.city)}</div>
+          <div class="property-rating-badge" onclick="event.stopPropagation();navigateTo('reviews', {property_id: ${p.property_id}})">
+            ★ ${ratingScore} <span style="opacity:0.8;font-size:0.72rem;">(${reviewCount})</span>
+          </div>
+        </div>
         <div class="property-card-name">${escHtml(p.name)}</div>
         <div class="property-card-description" id="prop-desc-${p.property_id}">${escHtml(descs[p.city] || modalData.tagline || `A luxury property in ${p.city}.`)}</div>
         <div class="property-card-footer">
           <div class="property-room-types" id="prop-rooms-${p.property_id}">${roomChips}</div>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">Explore ✦</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();navigateTo('reviews', {property_id: ${p.property_id}})">⭐ Reviews</button>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPropertyModal(${p.property_id})">Explore ✦</button>
+          </div>
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function viewProperty(propId, roomTypeId=null) {
-  const sel=document.getElementById('search-property');
-  if(sel) sel.value=propId;
+function viewProperty(propId, roomTypeId = null) {
+  const sel = document.getElementById('search-property');
+  if (sel) sel.value = propId;
   searchAvailability(propId, roomTypeId);
 }
 
 /* ─── Search Availability ─────────────────────────────────────────────── */
-async function searchAvailability(overridePropId=null, roomTypeId=null) {
+async function searchAvailability(overridePropId = null, roomTypeId = null) {
   if (overridePropId !== null) {
     const sel = document.getElementById('search-property');
     if (sel) sel.value = overridePropId;
   }
-  const propId   = document.getElementById('search-property')?.value;
-  const checkIn  = document.getElementById('search-checkin')?.value;
+  const propId = document.getElementById('search-property')?.value;
+  const checkIn = document.getElementById('search-checkin')?.value;
   const checkOut = document.getElementById('search-checkout')?.value;
-  const guests   = parseInt(document.getElementById('search-guests')?.value||'1');
-  if (!checkIn||!checkOut) { showToast('Select dates','','warning'); return; }
-  if (new Date(checkOut)<=new Date(checkIn)) { showToast('Invalid dates','Check-out must be after check-in.','error'); return; }
+  const guests = parseInt(document.getElementById('search-guests')?.value || '1');
+  if (!checkIn || !checkOut) { showToast('Select dates', '', 'warning'); return; }
+  if (new Date(checkOut) <= new Date(checkIn)) { showToast('Invalid dates', 'Check-out must be after check-in.', 'error'); return; }
   const btn = document.getElementById('search-btn');
-  if (btn) setLoading(btn,true,'Searching…');
+  if (btn) setLoading(btn, true, 'Searching…');
   const wrapper = document.getElementById('availability-results-wrapper');
-  if(wrapper) wrapper.innerHTML = `<div class="availability-section fade-in"><div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>`;
-  const nights = nightsBetween(checkIn,checkOut);
+  if (wrapper) wrapper.innerHTML = `<div class="availability-section fade-in"><div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>`;
+  const nights = nightsBetween(checkIn, checkOut);
 
   // If a specific property is chosen
   if (propId) {
-    const params = new URLSearchParams({property_id:propId,check_in:checkIn,check_out:checkOut});
+    const params = new URLSearchParams({ property_id: propId, check_in: checkIn, check_out: checkOut });
     if (roomTypeId) params.set('room_type_id', roomTypeId);
-    const {ok,data,error} = await apiJSON(`/rooms/availability?${params}`);
-    if (btn) setLoading(btn,false);
-    if(!ok){ showToast('Search failed',error,'error'); if(wrapper)wrapper.innerHTML=''; return; }
-    renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeId);
+    const { ok, data, error } = await apiJSON(`/rooms/availability?${params}`);
+    if (btn) setLoading(btn, false);
+    if (!ok) { showToast('Search failed', error, 'error'); if (wrapper) wrapper.innerHTML = ''; return; }
+    renderAvailabilityResults(data, checkIn, checkOut, guests, propId, roomTypeId);
   } else {
     // Single fast query across ALL properties
-    const params = new URLSearchParams({check_in:checkIn,check_out:checkOut});
+    const params = new URLSearchParams({ check_in: checkIn, check_out: checkOut });
     if (roomTypeId) params.set('room_type_id', roomTypeId);
-    const {ok,data} = await apiJSON(`/rooms/availability?${params}`);
-    if (btn) setLoading(btn,false);
+    const { ok, data } = await apiJSON(`/rooms/availability?${params}`);
+    if (btn) setLoading(btn, false);
     if (ok && data && data.length > 0) {
-      renderMultiPropertyAvailability(data,checkIn,checkOut,guests,nights);
+      renderMultiPropertyAvailability(data, checkIn, checkOut, guests, nights);
     } else if (ok && data) {
-      renderMultiPropertyAvailability([],checkIn,checkOut,guests,nights);
+      renderMultiPropertyAvailability([], checkIn, checkOut, guests, nights);
     } else {
       // Fallback: parallel fetching
       const propsToQuery = propertiesCache || [];
       const results = await Promise.all(propsToQuery.map(prop => {
-        const pParams = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
+        const pParams = new URLSearchParams({ property_id: prop.property_id, check_in: checkIn, check_out: checkOut });
         if (roomTypeId) pParams.set('room_type_id', roomTypeId);
-        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({...room, property_name:prop.name, property_city:prop.city})) : []);
+        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({ ...room, property_name: prop.name, property_city: prop.city })) : []);
       }));
-      renderMultiPropertyAvailability(results.flat(),checkIn,checkOut,guests,nights);
+      renderMultiPropertyAvailability(results.flat(), checkIn, checkOut, guests, nights);
     }
   }
 }
 
 const roomsCache = {};
 
-function renderMultiPropertyAvailability(allRooms,checkIn,checkOut,guests,nights) {
+function renderMultiPropertyAvailability(allRooms, checkIn, checkOut, guests, nights) {
   const wrapper = document.getElementById('availability-results-wrapper');
   if (!wrapper) return;
-  if(!allRooms || allRooms.length===0){
-    wrapper.innerHTML=`<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try adjusting your dates.</div></div></div>`;
+  if (!allRooms || allRooms.length === 0) {
+    wrapper.innerHTML = `<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try adjusting your dates.</div></div></div>`;
     return;
   }
-  const filtered = guests>1 ? (allRooms.filter(r=>r.max_occupancy>=guests).length>0 ? allRooms.filter(r=>r.max_occupancy>=guests) : allRooms) : allRooms;
+  const filtered = guests > 1 ? (allRooms.filter(r => r.max_occupancy >= guests).length > 0 ? allRooms.filter(r => r.max_occupancy >= guests) : allRooms) : allRooms;
   filtered.forEach(r => { roomsCache[r.room_id] = r; });
 
   const grouped = {};
   filtered.forEach(r => {
     const key = r.property_id;
-    if(!grouped[key]) grouped[key]={name:r.property_name,city:r.property_city,rooms:[]};
+    if (!grouped[key]) grouped[key] = { name: r.property_name, city: r.property_city, rooms: [] };
     grouped[key].rooms.push(r);
   });
 
-  wrapper.innerHTML=`
+  wrapper.innerHTML = `
     <div class="availability-section fade-in" id="availability-section">
       <div class="availability-header">
         <div>
           <div class="section-eyebrow">All Properties · Live Availability</div>
-          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${filtered.length} Room${filtered.length!==1?'s':''} Available · ${nights} Night${nights!==1?'s':''}</h3>
+          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${filtered.length} Room${filtered.length !== 1 ? 's' : ''} Available · ${nights} Night${nights !== 1 ? 's' : ''}</h3>
           <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)} across ${Object.keys(grouped).length} destinations</div>
         </div>
       </div>
-      ${Object.values(grouped).map(g=>`
+      ${Object.values(grouped).map(g => `
         <div style="margin-bottom:var(--space-8)">
           <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);">
             <div style="width:36px;height:36px;border-radius:var(--radius-lg);background:rgba(212,137,31,0.15);border:1px solid rgba(212,137,31,0.3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🏨</div>
             <div>
               <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--cream-50)">${escHtml(g.name)}</div>
-              <div class="text-xs text-muted">${escHtml(g.city)} · ${g.rooms.length} room${g.rooms.length!==1?'s':''} available</div>
+              <div class="text-xs text-muted">${escHtml(g.city)} · ${g.rooms.length} room${g.rooms.length !== 1 ? 's' : ''} available</div>
             </div>
           </div>
           <div class="rooms-grid">
-            ${g.rooms.map(r=>`
+            ${g.rooms.map(r => `
               <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${r.property_id}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',${guests})" style="cursor:pointer;">
                 <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
                 <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
@@ -612,36 +740,36 @@ function renderMultiPropertyAvailability(allRooms,checkIn,checkOut,guests,nights
           </div>
         </div>`).join('')}
     </div>`;
-  wrapper.scrollIntoView({behavior:'smooth',block:'start'});
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeId=null) {
+function renderAvailabilityResults(data, checkIn, checkOut, guests, propId, roomTypeId = null) {
   const wrapper = document.getElementById('availability-results-wrapper');
   if (!wrapper) return;
-  const nights = nightsBetween(checkIn,checkOut);
-  const propName = propertiesCache?.find(p=>p.property_id==propId)?.name||'Property';
-  if(!data||data.length===0){
-    wrapper.innerHTML=`<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try different dates or another property.</div></div></div>`;
+  const nights = nightsBetween(checkIn, checkOut);
+  const propName = propertiesCache?.find(p => p.property_id == propId)?.name || 'Property';
+  if (!data || data.length === 0) {
+    wrapper.innerHTML = `<div class="availability-section fade-in"><div class="empty-state"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">Try different dates or another property.</div></div></div>`;
     return;
   }
-  let rooms = guests>1 ? (data.filter(r=>r.max_occupancy>=guests).length>0 ? data.filter(r=>r.max_occupancy>=guests) : data) : data;
+  let rooms = guests > 1 ? (data.filter(r => r.max_occupancy >= guests).length > 0 ? data.filter(r => r.max_occupancy >= guests) : data) : data;
   if (roomTypeId) {
     const filteredByType = rooms.filter(r => r.room_type_id == roomTypeId || r.type_id == roomTypeId);
     if (filteredByType.length > 0) rooms = filteredByType;
   }
   rooms.forEach(r => { roomsCache[r.room_id] = { ...r, property_name: propName, property_id: propId }; });
 
-  wrapper.innerHTML=`
+  wrapper.innerHTML = `
     <div class="availability-section fade-in" id="availability-section">
       <div class="availability-header">
         <div>
           <div class="section-eyebrow">Available Rooms · ${escHtml(propName)}</div>
-          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${rooms.length} Room${rooms.length!==1?'s':''} · ${nights} Night${nights!==1?'s':''}</h3>
+          <h3 class="section-title" style="font-size:1.6rem;margin-bottom:0">${rooms.length} Room${rooms.length !== 1 ? 's' : ''} · ${nights} Night${nights !== 1 ? 's' : ''}</h3>
           <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)}</div>
         </div>
       </div>
       <div class="rooms-grid">
-        ${rooms.map(r=>`
+        ${rooms.map(r => `
           <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${propId}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',${guests})" style="cursor:pointer;">
             <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
             <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
@@ -656,11 +784,11 @@ function renderAvailabilityResults(data,checkIn,checkOut,guests,propId,roomTypeI
           </div>`).join('')}
       </div>
     </div>`;
-  wrapper.scrollIntoView({behavior:'smooth',block:'start'});
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function selectRoom(roomId,checkIn,checkOut,guests,roomData) {
-  document.querySelectorAll('.room-card').forEach(c=>c.classList.remove('selected'));
+function selectRoom(roomId, checkIn, checkOut, guests, roomData) {
+  document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`room-card-${roomId}`)?.classList.add('selected');
   // Capture room data from cache or DOM if not provided
   if (!roomData) {
@@ -671,23 +799,213 @@ function selectRoom(roomId,checkIn,checkOut,guests,roomData) {
     if (card) {
       roomData = {
         room_id: roomId,
-        room_number: card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||String(roomId),
-        type_name: card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'Deluxe',
-        total_rate: parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g,'')||0),
-        nightly_rate: parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g,'')||0),
-        max_occupancy: parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||4),
-        property_name: propertiesCache?.find(p=>p.property_id==parseInt(card.closest('[data-prop-id]')?.dataset?.propId||0))?.name || null,
+        room_number: card.querySelector('.room-number')?.textContent.replace('Room ', '').trim() || String(roomId),
+        type_name: card.querySelector('.room-card-name')?.textContent.replace(' Suite', '').trim() || 'Deluxe',
+        total_rate: parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g, '') || 0),
+        nightly_rate: parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g, '') || 0),
+        max_occupancy: parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g, '') || 4),
+        property_name: propertiesCache?.find(p => p.property_id == parseInt(card.closest('[data-prop-id]')?.dataset?.propId || 0))?.name || null,
       };
       roomsCache[roomId] = roomData;
     }
   }
   if (!Auth.isLoggedIn()) {
-    showToast('Please log in','Create an account or log in to book.','info');
-    sessionStorage.setItem('pending_booking',JSON.stringify({roomId,checkIn,checkOut,guests,roomData}));
+    showToast('Please log in', 'Create an account or log in to book.', 'info');
+    sessionStorage.setItem('pending_booking', JSON.stringify({ roomId, checkIn, checkOut, guests, roomData }));
     openAuthModal('login'); return;
   }
-  openBookingModal(roomId,checkIn,checkOut,guests,roomData);
+  openBookingModal(roomId, checkIn, checkOut, guests, roomData);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PAGE: REVIEWS (Resort reviews & guest experiences)
+   ───────────────────────────────────────────────────────────────────────── */
+registerPage('reviews', async (container, params = {}) => {
+  const initialPropId = params.property_id || null;
+  let selectedPropId = initialPropId ? parseInt(initialPropId) : null;
+  let selectedRating = null;
+
+  container.innerHTML = `
+    <div class="page">
+      <div class="container">
+        <div style="margin-bottom:var(--space-6);padding-top:var(--space-4);">
+          <div class="section-eyebrow">✦ Verified Stays & Experiences</div>
+          <h1 class="heading-display" style="font-size:2.4rem;color:var(--cream-50)">Guest Reviews & Ratings</h1>
+          <p class="text-muted" style="margin-top:var(--space-2)">Authentic stories and ratings from guests who experienced the luxury of Kaveri Stays.</p>
+        </div>
+
+        <!-- Resort Selector Pills -->
+        <div class="resort-selector-pills" id="review-resort-pills">
+          <button class="resort-pill-btn ${!selectedPropId ? 'active' : ''}" data-prop="all">✦ All Resorts</button>
+          <button class="resort-pill-btn ${selectedPropId === 1 ? 'active' : ''}" data-prop="1">🌲 Kaveri Riverside · Coorg</button>
+          <button class="resort-pill-btn ${selectedPropId === 2 ? 'active' : ''}" data-prop="2">🍃 Kaveri Hilltop · Ooty</button>
+          <button class="resort-pill-btn ${selectedPropId === 3 ? 'active' : ''}" data-prop="3">🌊 Kaveri Backwater · Alleppey</button>
+        </div>
+
+        <!-- Rating Summary Box (Glassmorphic) -->
+        <div id="reviews-summary-container">
+          <div class="review-summary-card skeleton" style="height: 180px;"></div>
+        </div>
+
+        <!-- Reviews Grid -->
+        <div id="reviews-feed-container">
+          <div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>
+        </div>
+
+        <!-- Call to Action Banner -->
+        <div class="glass-card" style="margin-top:var(--space-10);text-align:center;padding:var(--space-8);background:linear-gradient(135deg,rgba(15,23,42,0.8),rgba(26,54,93,0.4));border:1px solid rgba(212,137,31,0.25);">
+          <h3 class="heading-serif" style="font-size:1.6rem;color:var(--cream-50);margin-bottom:var(--space-2);">Have You Stayed with Us?</h3>
+          <p class="text-muted text-sm" style="max-width:550px;margin:0 auto var(--space-4);">We value your feedback! Guests who have completed a stay can leave a verified review from their booking dashboard.</p>
+          <div style="display:flex;justify-content:center;gap:var(--space-3);flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="navigateTo('dashboard')">Go to My Bookings 📋</button>
+            <button class="btn btn-secondary" onclick="navigateTo('vacancies')">Book Next Stay ✦</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach tab events
+  const pills = container.querySelectorAll('.resort-pill-btn');
+  pills.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const propVal = btn.dataset.prop;
+      selectedPropId = propVal === 'all' ? null : parseInt(propVal);
+      selectedRating = null;
+      loadReviewsData(selectedPropId, selectedRating);
+    });
+  });
+
+  async function loadReviewsData(propId, ratingFilter) {
+    const summaryBox = document.getElementById('reviews-summary-container');
+    const feedBox = document.getElementById('reviews-feed-container');
+    if (!summaryBox || !feedBox) return;
+
+    let url = propId ? `/properties/${propId}/reviews` : `/reviews`;
+    if (ratingFilter) {
+      url += `?rating=${ratingFilter}`;
+    }
+
+    const { ok, data, error } = await apiJSON(url);
+    if (!ok || !data) {
+      feedBox.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Failed to load reviews</div><div class="empty-state-desc">${escHtml(error || 'Please try again later.')}</div></div>`;
+      return;
+    }
+
+    const total = data.total_reviews || 0;
+    const avg = data.average_rating || 5.0;
+    const dist = data.rating_distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    const revs = data.reviews || [];
+
+    // Render Summary Card
+    summaryBox.innerHTML = `
+      <div class="review-summary-card fade-in">
+        <div class="review-big-score-box">
+          <div class="review-big-score">${avg.toFixed(1)}</div>
+          <div style="color:var(--gold-200);font-size:1.2rem;margin-bottom:4px;">${starsHTML(Math.round(avg))}</div>
+          <div class="text-xs text-muted" style="margin-bottom:6px;">Based on <strong>${total}</strong> verified review${total !== 1 ? 's' : ''}</div>
+          <div class="review-verified-tag">✦ 100% Verified Stays</div>
+        </div>
+
+        <div class="review-bars-container">
+          ${[5, 4, 3, 2, 1].map(stars => {
+            const count = dist[stars] || 0;
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return `
+              <div class="review-bar-row">
+                <div class="review-bar-label">${stars} ★</div>
+                <div class="review-bar-track">
+                  <div class="review-bar-fill" style="width:${pct}%;"></div>
+                </div>
+                <div class="review-bar-count">${count}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="review-filter-pills">
+          <div class="text-xs text-muted" style="font-weight:600;margin-bottom:2px;">Filter by Rating</div>
+          <button class="review-filter-btn ${ratingFilter === null ? 'active' : ''}" onclick="window._setReviewRatingFilter(null)">
+            <span>All Reviews</span>
+            <span>${total}</span>
+          </button>
+          ${[5, 4, 3, 2, 1].map(s => `
+            <button class="review-filter-btn ${ratingFilter === s ? 'active' : ''}" onclick="window._setReviewRatingFilter(${s})">
+              <span>${s} Stars ★</span>
+              <span>${dist[s] || 0}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Global helper for filter click
+    window._setReviewRatingFilter = (r) => {
+      selectedRating = r;
+      loadReviewsData(selectedPropId, selectedRating);
+    };
+
+    // Render Reviews Grid
+    if (revs.length === 0) {
+      feedBox.innerHTML = `
+        <div class="empty-state fade-in" style="padding:var(--space-12);">
+          <div class="empty-state-icon">⭐</div>
+          <div class="empty-state-title">No reviews found for this selection</div>
+          <div class="empty-state-desc">${ratingFilter ? `No ${ratingFilter}-star reviews yet for this resort.` : 'Be the first guest to leave a review after your stay!'}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const emojis = { 1: '🌲', 2: '🍃', 3: '🌊' };
+    feedBox.innerHTML = `
+      <div class="reviews-grid fade-in">
+        ${revs.map(r => {
+          const initials = r.guest_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'G';
+          const propEmoji = emojis[r.property_id] || '🏨';
+          return `
+            <div class="review-card">
+              <div>
+                <div class="review-card-header">
+                  <div class="review-guest-avatar">${initials}</div>
+                  <div style="flex-grow:1;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                      <strong style="color:var(--cream-50);font-size:0.95rem;">${escHtml(r.guest_name)}</strong>
+                      <span class="review-verified-tag">✦ Verified</span>
+                    </div>
+                    <div class="text-xs text-muted" style="margin-top:2px;">
+                      ${r.guest_city ? `${escHtml(r.guest_city)} · ` : ''}${formatDate(r.review_date)}
+                    </div>
+                    <div class="review-resort-tag">
+                      ${propEmoji} ${escHtml(r.property_name)} ${r.room_type_name ? `· <span style="opacity:0.8">${escHtml(r.room_type_name)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="color:var(--gold-200);font-size:1.1rem;margin-bottom:var(--space-3);letter-spacing:2px;">
+                  ${starsHTML(r.rating)}
+                </div>
+
+                <div class="review-comment-body">
+                  "${escHtml(r.comment || 'An exceptional luxury experience amidst tranquil nature.')}"
+                </div>
+              </div>
+
+              <div class="review-card-footer">
+                <span>Stay at ${escHtml(r.city)}</span>
+                <span style="color:var(--gold-300);font-weight:600;">${r.rating}.0 / 5.0 ★</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  await loadReviewsData(selectedPropId, selectedRating);
+});
 
 /* ─────────────────────────────────────────────────────────────────────────
    PAGE: VACANCIES (Room availability across all properties)
@@ -744,18 +1062,18 @@ registerPage('vacancies', async (container) => {
   // Populate property select
   if (!propertiesCache) await loadPropertiesCache();
   const ps = document.getElementById('vac-property');
-  if(ps && propertiesCache) propertiesCache.forEach(p=>ps.innerHTML+=`<option value="${p.property_id}">${escHtml(p.name)} — ${escHtml(p.city)}</option>`);
+  if (ps && propertiesCache) propertiesCache.forEach(p => ps.innerHTML += `<option value="${p.property_id}">${escHtml(p.name)} — ${escHtml(p.city)}</option>`);
 
-  const d1=daysFromNow(1), d3=daysFromNow(3);
-  document.getElementById('vac-checkin').value=d1;
-  document.getElementById('vac-checkin').min=todayStr();
-  document.getElementById('vac-checkout').value=d3;
-  document.getElementById('vac-checkout').min=d1;
+  const d1 = daysFromNow(1), d3 = daysFromNow(3);
+  document.getElementById('vac-checkin').value = d1;
+  document.getElementById('vac-checkin').min = todayStr();
+  document.getElementById('vac-checkout').value = d3;
+  document.getElementById('vac-checkout').min = d1;
 
   document.getElementById('vac-search-btn').addEventListener('click', searchVacancies);
-  document.getElementById('vac-checkin').addEventListener('change',e=>{
-    const d=new Date(e.target.value);d.setDate(d.getDate()+1);
-    document.getElementById('vac-checkout').min=d.toISOString().split('T')[0];
+  document.getElementById('vac-checkin').addEventListener('change', e => {
+    const d = new Date(e.target.value); d.setDate(d.getDate() + 1);
+    document.getElementById('vac-checkout').min = d.toISOString().split('T')[0];
   });
 
   // Auto-search on load
@@ -763,49 +1081,49 @@ registerPage('vacancies', async (container) => {
 });
 
 async function loadPropertiesCache() {
-  const {ok,data}=await apiJSON('/properties');
-  if(ok&&data) propertiesCache=data;
+  const { ok, data } = await apiJSON('/properties');
+  if (ok && data) propertiesCache = data;
 }
 
 async function searchVacancies() {
-  const propId   = document.getElementById('vac-property')?.value;
-  const checkIn  = document.getElementById('vac-checkin')?.value;
+  const propId = document.getElementById('vac-property')?.value;
+  const checkIn = document.getElementById('vac-checkin')?.value;
   const checkOut = document.getElementById('vac-checkout')?.value;
   const roomType = document.getElementById('vac-type')?.value;
-  if (!checkIn||!checkOut){ showToast('Select dates','','warning'); return; }
-  if (new Date(checkOut)<=new Date(checkIn)){ showToast('Invalid dates','Check-out must be after check-in.','error'); return; }
+  if (!checkIn || !checkOut) { showToast('Select dates', '', 'warning'); return; }
+  if (new Date(checkOut) <= new Date(checkIn)) { showToast('Invalid dates', 'Check-out must be after check-in.', 'error'); return; }
   const btn = document.getElementById('vac-search-btn');
-  setLoading(btn,true,'Searching…');
+  setLoading(btn, true, 'Searching…');
   const results = document.getElementById('vac-results');
-  results.innerHTML=`<div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>`;
-  const nights = nightsBetween(checkIn,checkOut);
+  results.innerHTML = `<div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>`;
+  const nights = nightsBetween(checkIn, checkOut);
 
   let allRooms = [];
   if (propId) {
-    const params = new URLSearchParams({property_id:propId,check_in:checkIn,check_out:checkOut});
-    if(roomType) params.set('room_type_id',roomType);
-    const {ok,data}=await apiJSON(`/rooms/availability?${params}`);
-    if(ok&&data) allRooms = data;
+    const params = new URLSearchParams({ property_id: propId, check_in: checkIn, check_out: checkOut });
+    if (roomType) params.set('room_type_id', roomType);
+    const { ok, data } = await apiJSON(`/rooms/availability?${params}`);
+    if (ok && data) allRooms = data;
   } else {
-    const params = new URLSearchParams({check_in:checkIn,check_out:checkOut});
-    if(roomType) params.set('room_type_id',roomType);
-    const {ok,data}=await apiJSON(`/rooms/availability?${params}`);
-    if(ok&&data) {
+    const params = new URLSearchParams({ check_in: checkIn, check_out: checkOut });
+    if (roomType) params.set('room_type_id', roomType);
+    const { ok, data } = await apiJSON(`/rooms/availability?${params}`);
+    if (ok && data) {
       allRooms = data;
     } else {
-      const propsToQuery = propertiesCache||[];
+      const propsToQuery = propertiesCache || [];
       const results = await Promise.all(propsToQuery.map(prop => {
-        const pParams = new URLSearchParams({property_id:prop.property_id,check_in:checkIn,check_out:checkOut});
-        if(roomType) pParams.set('room_type_id',roomType);
-        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({...room, property_name:prop.name, property_city:prop.city})) : []);
+        const pParams = new URLSearchParams({ property_id: prop.property_id, check_in: checkIn, check_out: checkOut });
+        if (roomType) pParams.set('room_type_id', roomType);
+        return apiJSON(`/rooms/availability?${pParams}`).then(r => r.ok && r.data ? r.data.map(room => ({ ...room, property_name: prop.name, property_city: prop.city })) : []);
       }));
       allRooms = results.flat();
     }
   }
-  setLoading(btn,false);
+  setLoading(btn, false);
 
-  if(allRooms.length===0){
-    results.innerHTML=`<div class="empty-state"><div class="empty-state-icon">😔</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">No rooms match your criteria for ${formatDate(checkIn)} → ${formatDate(checkOut)}. Try adjusting dates or room type.</div></div>`;
+  if (allRooms.length === 0) {
+    results.innerHTML = `<div class="empty-state"><div class="empty-state-icon">😔</div><div class="empty-state-title">No rooms available</div><div class="empty-state-desc">No rooms match your criteria for ${formatDate(checkIn)} → ${formatDate(checkOut)}. Try adjusting dates or room type.</div></div>`;
     return;
   }
 
@@ -814,29 +1132,29 @@ async function searchVacancies() {
   allRooms.forEach(r => {
     roomsCache[r.room_id] = r;
     const key = r.property_id;
-    if(!grouped[key]) grouped[key]={name:r.property_name,city:r.property_city,rooms:[]};
+    if (!grouped[key]) grouped[key] = { name: r.property_name, city: r.property_city, rooms: [] };
     grouped[key].rooms.push(r);
   });
 
   results.innerHTML = `
     <div style="margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;">
       <div>
-        <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)} · ${nights} night${nights!==1?'s':''}</div>
-        <div style="font-weight:600;color:var(--cream-50)">${allRooms.length} room${allRooms.length!==1?'s':''} available across ${Object.keys(grouped).length} propert${Object.keys(grouped).length===1?'y':'ies'}</div>
+        <div class="text-muted text-sm">${formatDate(checkIn)} → ${formatDate(checkOut)} · ${nights} night${nights !== 1 ? 's' : ''}</div>
+        <div style="font-weight:600;color:var(--cream-50)">${allRooms.length} room${allRooms.length !== 1 ? 's' : ''} available across ${Object.keys(grouped).length} propert${Object.keys(grouped).length === 1 ? 'y' : 'ies'}</div>
       </div>
-      ${Auth.isLoggedIn()?'':'<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'login\')">Login to Book</button>'}
+      ${Auth.isLoggedIn() ? '' : '<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'login\')">Login to Book</button>'}
     </div>
-    ${Object.values(grouped).map(g=>`
+    ${Object.values(grouped).map(g => `
       <div style="margin-bottom:var(--space-8)">
         <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);">
           <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:rgba(212,137,31,0.15);border:1px solid rgba(212,137,31,0.3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🏨</div>
           <div>
             <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--cream-50)">${escHtml(g.name)}</div>
-            <div class="text-xs text-muted">${escHtml(g.city)} · ${g.rooms.length} room${g.rooms.length!==1?'s':''} available</div>
+            <div class="text-xs text-muted">${escHtml(g.city)} · ${g.rooms.length} room${g.rooms.length !== 1 ? 's' : ''} available</div>
           </div>
         </div>
         <div class="rooms-grid">
-          ${g.rooms.map(r=>`
+          ${g.rooms.map(r => `
             <div class="room-card" id="room-card-${r.room_id}" data-room-id="${r.room_id}" data-prop-id="${r.property_id}" onclick="selectRoom(${r.room_id},'${checkIn}','${checkOut}',1)" style="cursor:pointer;">
               <div class="room-card-header"><div class="room-number">Room ${escHtml(r.room_number)}</div><div class="room-type-badge">${escHtml(r.type_name)}</div></div>
               <div class="room-card-name">${escHtml(r.type_name)} Suite</div>
@@ -857,7 +1175,7 @@ async function searchVacancies() {
    PAGE: DASHBOARD (My Bookings)
    ───────────────────────────────────────────────────────────────────────── */
 registerPage('dashboard', async (container) => {
-  if (!Auth.isLoggedIn()) { openAuthModal('login'); navigateTo('home'); showToast('Login required','','info'); return; }
+  if (!Auth.isLoggedIn()) { openAuthModal('login'); navigateTo('home'); showToast('Login required', '', 'info'); return; }
   const user = Auth.user;
   container.innerHTML = `
     <div class="page">
@@ -865,13 +1183,13 @@ registerPage('dashboard', async (container) => {
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--space-8);padding-top:var(--space-4);flex-wrap:wrap;gap:var(--space-4)">
           <div>
             <div class="section-eyebrow">Welcome back</div>
-            <h1 class="heading-display" style="font-size:2.2rem;color:var(--cream-50)">${escHtml(user?.name||'Guest')}</h1>
-            <div class="text-sm text-muted" style="margin-top:var(--space-1)">${escHtml(user?.email||'')} · <span class="room-type-badge" style="font-size:0.7rem">${escHtml(user?.role||'guest')}</span></div>
+            <h1 class="heading-display" style="font-size:2.2rem;color:var(--cream-50)">${escHtml(user?.name || 'Guest')}</h1>
+            <div class="text-sm text-muted" style="margin-top:var(--space-1)">${escHtml(user?.email || '')} · <span class="room-type-badge" style="font-size:0.7rem">${escHtml(user?.role || 'guest')}</span></div>
           </div>
           <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
             <button class="btn btn-primary" onclick="navigateTo('home')">+ New Booking</button>
             <button class="btn btn-outline" onclick="navigateTo('vacancies')">Check Vacancies</button>
-            ${Auth.isStaff()?`<button class="btn btn-secondary" onclick="navigateTo('admin')">Admin Panel →</button>`:''}
+            ${Auth.isStaff() ? `<button class="btn btn-secondary" onclick="navigateTo('admin')">Admin Panel →</button>` : ''}
           </div>
         </div>
         <div class="stat-cards-grid" id="dash-stats"></div>
@@ -888,40 +1206,40 @@ registerPage('dashboard', async (container) => {
   await loadDashboard();
 });
 
-let allBookings=[];
+let allBookings = [];
 let currentStatusFilter = '';
 
 function renderDashboardFilters() {
-  const confirmed = allBookings.filter(b=>b.status==='confirmed').length;
-  const completed = allBookings.filter(b=>b.status==='checked_out').length;
-  const cancelled = allBookings.filter(b=>b.status==='cancelled').length;
+  const confirmed = allBookings.filter(b => b.status === 'confirmed').length;
+  const completed = allBookings.filter(b => b.status === 'checked_out').length;
+  const cancelled = allBookings.filter(b => b.status === 'cancelled').length;
   const filterContainer = document.getElementById('dash-filter-container');
   if (filterContainer) {
     filterContainer.innerHTML = `
       <div class="filter-pills-bar">
-        <button class="filter-pill ${currentStatusFilter===''?'active':''}" onclick="setDashboardFilter('')">All Stays <span class="filter-pill-count">${allBookings.length}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='confirmed'?'active':''}" onclick="setDashboardFilter('confirmed')">Confirmed <span class="filter-pill-count">${confirmed}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='checked_out'?'active':''}" onclick="setDashboardFilter('checked_out')">Completed <span class="filter-pill-count">${completed}</span></button>
-        <button class="filter-pill ${currentStatusFilter==='cancelled'?'active':''}" onclick="setDashboardFilter('cancelled')">Cancelled <span class="filter-pill-count">${cancelled}</span></button>
+        <button class="filter-pill ${currentStatusFilter === '' ? 'active' : ''}" onclick="setDashboardFilter('')">All Stays <span class="filter-pill-count">${allBookings.length}</span></button>
+        <button class="filter-pill ${currentStatusFilter === 'confirmed' ? 'active' : ''}" onclick="setDashboardFilter('confirmed')">Confirmed <span class="filter-pill-count">${confirmed}</span></button>
+        <button class="filter-pill ${currentStatusFilter === 'checked_out' ? 'active' : ''}" onclick="setDashboardFilter('checked_out')">Completed <span class="filter-pill-count">${completed}</span></button>
+        <button class="filter-pill ${currentStatusFilter === 'cancelled' ? 'active' : ''}" onclick="setDashboardFilter('cancelled')">Cancelled <span class="filter-pill-count">${cancelled}</span></button>
       </div>`;
   }
 }
 
 async function loadDashboard() {
-  const {ok,data}=await apiJSON('/bookings?limit=100');
-  if(!ok||!data){ document.getElementById('bookings-area').innerHTML=`<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load bookings</div></div>`; return; }
-  allBookings=data.items||[];
-  const confirmed =allBookings.filter(b=>b.status==='confirmed').length;
-  const checkedIn =allBookings.filter(b=>b.status==='checked_in').length;
-  const totalSpent=allBookings.reduce((s,b)=>s+(b.amount_paid||0),0);
-  
-  const statsEl=document.getElementById('dash-stats');
-  if(statsEl) statsEl.innerHTML=`
+  const { ok, data } = await apiJSON('/bookings?limit=100');
+  if (!ok || !data) { document.getElementById('bookings-area').innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load bookings</div></div>`; return; }
+  allBookings = data.items || [];
+  const confirmed = allBookings.filter(b => b.status === 'confirmed').length;
+  const checkedIn = allBookings.filter(b => b.status === 'checked_in').length;
+  const totalSpent = allBookings.reduce((s, b) => s + (b.amount_paid || 0), 0);
+
+  const statsEl = document.getElementById('dash-stats');
+  if (statsEl) statsEl.innerHTML = `
     <div class="stat-card stat-card-gold"><div class="stat-card-label">Total Bookings</div><div class="stat-card-value">${data.total}</div><div class="stat-card-icon">📋</div></div>
     <div class="stat-card stat-card-blue"><div class="stat-card-label">Upcoming</div><div class="stat-card-value">${confirmed}</div><div class="stat-card-icon">📅</div></div>
     <div class="stat-card stat-card-green"><div class="stat-card-label">Active Stays</div><div class="stat-card-value">${checkedIn}</div><div class="stat-card-icon">🏨</div></div>
     <div class="stat-card stat-card-purple"><div class="stat-card-label">Amount Paid</div><div class="stat-card-value" style="font-size:1.3rem">${formatCurrency(totalSpent)}</div><div class="stat-card-icon">💰</div></div>`;
-  
+
   renderDashboardFilters();
   loadBookingsTable(currentStatusFilter);
 }
@@ -933,19 +1251,19 @@ function setDashboardFilter(status) {
 }
 
 function loadBookingsTable(statusFilter) {
-  const filtered=statusFilter?allBookings.filter(b=>b.status===statusFilter):allBookings;
-  const area=document.getElementById('bookings-area'); if(!area) return;
-  if(filtered.length===0){
-    area.innerHTML=`<div class="empty-state"><div class="empty-state-icon">🌴</div><div class="empty-state-title">No bookings found</div><div class="empty-state-desc">Ready to plan your next escape?</div><button class="btn btn-primary" onclick="navigateTo('home')">Explore Properties</button></div>`;
+  const filtered = statusFilter ? allBookings.filter(b => b.status === statusFilter) : allBookings;
+  const area = document.getElementById('bookings-area'); if (!area) return;
+  if (filtered.length === 0) {
+    area.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🌴</div><div class="empty-state-title">No bookings found</div><div class="empty-state-desc">Ready to plan your next escape?</div><button class="btn btn-primary" onclick="navigateTo('home')">Explore Properties</button></div>`;
     return;
   }
-  area.innerHTML=`
+  area.innerHTML = `
     <div class="stay-cards-list">
-      ${filtered.map(b=>{
-        const nights = Math.max(1, nightsBetween(b.check_in, b.check_out));
-        const due = Math.max(0, (b.total_amount || 0) - (b.amount_paid || 0));
-        const method = (b.payment_method || 'card').toUpperCase();
-        return `
+      ${filtered.map(b => {
+    const nights = Math.max(1, nightsBetween(b.check_in, b.check_out));
+    const due = Math.max(0, (b.total_amount || 0) - (b.amount_paid || 0));
+    const method = (b.payment_method || 'card').toUpperCase();
+    return `
           <div class="stay-card" id="stay-card-${b.booking_id}">
             <div class="stay-card-header">
               <div>
@@ -968,35 +1286,39 @@ function loadBookingsTable(statusFilter) {
               </div>
 
               <div>
-                <div class="stay-meta">${nights} Night${nights>1?'s':''} · ${b.guest_count} Guest${b.guest_count>1?'s':''}</div>
+                <div class="stay-meta">${nights} Night${nights > 1 ? 's' : ''} · ${b.guest_count} Guest${b.guest_count > 1 ? 's' : ''}</div>
                 <div class="stay-submeta">Paid via ${method} · ${escHtml(b.property_name || 'Kaveri Stays')}</div>
               </div>
 
               <div class="stay-financials">
                 <div class="stay-total">Total: <strong>${formatCurrency(b.total_amount)}</strong></div>
                 <div class="stay-paid">Paid: ${formatCurrency(b.amount_paid)}</div>
-                ${due > 0 && b.status !== 'cancelled' 
-                  ? `<div class="stay-due-red">Due Balance: ${formatCurrency(due)}</div>` 
-                  : `<div class="stay-settled-green">Fully Settled ✓</div>`}
+                ${due > 0 && b.status !== 'cancelled'
+        ? `<div class="stay-due-red">Due Balance: ${formatCurrency(due)}</div>`
+        : `<div class="stay-settled-green">Fully Settled ✓</div>`}
               </div>
             </div>
 
             <div class="stay-actions">
-              ${b.status==='checked_in' ? `<button class="btn btn-secondary btn-sm" onclick="adminCheckOut(${b.booking_id})">Complete Checkout</button>` : `<button class="btn btn-secondary btn-sm" onclick="openBookingDetail(${b.booking_id})">View Details</button>`}
-              ${b.status==='confirmed' ? `<button class="btn btn-danger-outline btn-sm" onclick="cancelBooking(${b.booking_id})">Cancel Stay</button>` : ''}
-              ${b.status==='checked_out' ? `<button class="btn btn-success btn-sm" onclick="openReviewModal(${b.booking_id})">Leave Review ★</button>` : ''}
-              ${due > 0 && b.status !== 'cancelled' 
-                ? `<button class="btn btn-forest btn-sm" onclick="settleBalance(${b.booking_id}, ${due})">Settle Balance (${formatCurrency(due)}) →</button>` 
+              ${b.status === 'checked_in' ? `<button class="btn btn-secondary btn-sm" onclick="adminCheckOut(${b.booking_id})">Complete Checkout</button>` : `<button class="btn btn-secondary btn-sm" onclick="openBookingDetail(${b.booking_id})">View Details</button>`}
+              ${b.status === 'confirmed' ? `<button class="btn btn-danger-outline btn-sm" onclick="cancelBooking(${b.booking_id})">Cancel Stay</button>` : ''}
+              ${b.status === 'checked_out'
+                ? (b.review
+                    ? `<div class="stay-review-badge">✦ You rated this stay: <strong style="color:var(--gold-200);">${'★'.repeat(b.review.rating)}${'☆'.repeat(5 - b.review.rating)}</strong> ${b.review.comment ? `<span style="font-style:italic;color:var(--cream-100);display:block;margin-top:2px;">"${escHtml(b.review.comment)}"</span>` : ''}</div>`
+                    : `<button class="btn btn-primary btn-sm" onclick="openReviewModal(${b.booking_id})">Leave Review ⭐</button>`)
                 : ''}
+              ${due > 0 && b.status !== 'cancelled'
+        ? `<button class="btn btn-forest btn-sm" onclick="settleBalance(${b.booking_id}, ${due})">Settle Balance (${formatCurrency(due)}) →</button>`
+        : ''}
             </div>
           </div>
         `;
-      }).join('')}
+  }).join('')}
     </div>`;
 }
 
 async function settleBalance(bookingId, dueAmount) {
-  const {ok, error} = await apiJSON(`/bookings/${bookingId}/payments`, {
+  const { ok, error } = await apiJSON(`/bookings/${bookingId}/payments`, {
     method: 'POST',
     body: JSON.stringify({ amount: dueAmount, method: 'card' })
   });
@@ -1005,13 +1327,13 @@ async function settleBalance(bookingId, dueAmount) {
     return;
   }
   showToast('Balance Settled! ✓', `Payment of ${formatCurrency(dueAmount)} recorded.`, 'success');
-  
+
   // Fetch updated booking details to show the secured stay confirmation display
-  const {ok: bok, data: updatedBooking} = await apiJSON(`/bookings/${bookingId}`);
+  const { ok: bok, data: updatedBooking } = await apiJSON(`/bookings/${bookingId}`);
   if (bok && updatedBooking) {
     showBookingSuccess(updatedBooking, null, 'Remaining Balance Paid');
   }
-  
+
   await loadDashboard();
 }
 
@@ -1019,7 +1341,7 @@ function cancelBooking(id) {
   const b = allBookings.find(x => x.booking_id == id);
   const paid = b ? (b.amount_paid || 0) : 0;
   const prop = b ? (b.property_name || 'Kaveri Stays') : 'Kaveri Stays';
-  
+
   document.getElementById('cancel-modal-title').textContent = 'Cancel Reservation';
   document.getElementById('cancel-modal-body').innerHTML = `
     <div style="text-align:center;padding:var(--space-2) 0 var(--space-4);">
@@ -1056,10 +1378,10 @@ async function executeCancellation(id) {
     showToast('Failed to cancel', error, 'error');
     return;
   }
-  
+
   const b = allBookings.find(x => x.booking_id == id);
   const paid = b ? (b.amount_paid || 0) : 0;
-  
+
   // Show the confirmation display
   document.getElementById('cancel-modal-title').textContent = 'Cancellation Confirmed';
   document.getElementById('cancel-modal-body').innerHTML = `
@@ -1091,17 +1413,17 @@ async function executeCancellation(id) {
    PAGE: ADMIN PANEL
    ───────────────────────────────────────────────────────────────────────── */
 registerPage('admin', async (container) => {
-  if (!Auth.isLoggedIn()||!Auth.isStaff()) { showToast('Access denied','Staff or above required.','error'); navigateTo('home'); return; }
-  const user=Auth.user;
-  const isManager=Auth.isManager();
-  container.innerHTML=`
+  if (!Auth.isLoggedIn() || !Auth.isStaff()) { showToast('Access denied', 'Staff or above required.', 'error'); navigateTo('home'); return; }
+  const user = Auth.user;
+  const isManager = Auth.isManager();
+  container.innerHTML = `
     <div class="page">
       <div class="container">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6);padding-top:var(--space-4);flex-wrap:wrap;gap:var(--space-4)">
           <div>
             <div class="section-eyebrow">🛡️ Admin Panel</div>
             <h1 class="heading-display" style="font-size:2rem;color:var(--cream-50)">Hotel Operations</h1>
-            <div class="text-sm text-muted">${escHtml(user?.name)} · <span class="room-type-badge">${escHtml(user?.role)}</span> ${user?.property_id?`· Property #${user.property_id}`:''}</div>
+            <div class="text-sm text-muted">${escHtml(user?.name)} · <span class="room-type-badge">${escHtml(user?.role)}</span> ${user?.property_id ? `· Property #${user.property_id}` : ''}</div>
           </div>
           <button class="btn btn-secondary" onclick="navigateTo('dashboard')">← My Dashboard</button>
         </div>
@@ -1118,7 +1440,8 @@ registerPage('admin', async (container) => {
         <div class="pill-tabs" id="admin-tabs" style="margin-bottom:var(--space-6)">
           <div class="pill-tab active" data-admin-tab="bookings">All Bookings</div>
           <div class="pill-tab" data-admin-tab="checkin">Check-in / Out</div>
-          ${isManager?`<div class="pill-tab" data-admin-tab="reports">Reports</div>`:''}
+          <div class="pill-tab" data-admin-tab="reviews">Guest Reviews ⭐</div>
+          ${isManager ? `<div class="pill-tab" data-admin-tab="reports">Reports</div>` : ''}
         </div>
 
         <!-- Tab content -->
@@ -1129,9 +1452,9 @@ registerPage('admin', async (container) => {
     </div>`;
 
   // Tab switching
-  document.querySelectorAll('[data-admin-tab]').forEach(t=>{
-    t.addEventListener('click',()=>{
-      document.querySelectorAll('[data-admin-tab]').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('[data-admin-tab]').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('[data-admin-tab]').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
       loadAdminTab(t.dataset.adminTab);
     });
@@ -1142,14 +1465,14 @@ registerPage('admin', async (container) => {
 });
 
 async function loadAdminStats() {
-  const {ok,data}=await apiJSON('/bookings?limit=100');
-  if(!ok||!data) return;
-  const items=data.items||[];
-  const checkedIn=items.filter(b=>b.status==='checked_in');
-  const confirmed=items.filter(b=>b.status==='confirmed');
-  const revenue=items.reduce((s,b)=>s+(b.amount_paid||0),0);
-  const el=document.getElementById('admin-stats');
-  if(el) el.innerHTML=`
+  const { ok, data } = await apiJSON('/bookings?limit=100');
+  if (!ok || !data) return;
+  const items = data.items || [];
+  const checkedIn = items.filter(b => b.status === 'checked_in');
+  const confirmed = items.filter(b => b.status === 'confirmed');
+  const revenue = items.reduce((s, b) => s + (b.amount_paid || 0), 0);
+  const el = document.getElementById('admin-stats');
+  if (el) el.innerHTML = `
     <div class="stat-card stat-card-gold"><div class="stat-card-label">Total Bookings</div><div class="stat-card-value">${data.total}</div><div class="stat-card-icon">📋</div></div>
     <div class="stat-card stat-card-green"><div class="stat-card-label">Currently Checked In</div><div class="stat-card-value">${checkedIn.length}</div><div class="stat-card-icon">🏨</div></div>
     <div class="stat-card stat-card-blue"><div class="stat-card-label">Upcoming Arrivals</div><div class="stat-card-value">${confirmed.length}</div><div class="stat-card-icon">📅</div></div>
@@ -1157,14 +1480,14 @@ async function loadAdminStats() {
 }
 
 async function loadAdminTab(tab) {
-  const content=document.getElementById('admin-content'); if(!content) return;
-  content.innerHTML=`<div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>`;
+  const content = document.getElementById('admin-content'); if (!content) return;
+  content.innerHTML = `<div class="flex justify-center" style="padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>`;
 
-  if (tab==='bookings') {
-    const {ok,data}=await apiJSON('/bookings?limit=100&sort=check_in&sort_order=desc');
-    if(!ok||!data){content.innerHTML=`<div class="empty-state"><div class="empty-state-title">Failed to load</div></div>`;return;}
-    const items=data.items||[];
-    content.innerHTML=`
+  if (tab === 'bookings') {
+    const { ok, data } = await apiJSON('/bookings?limit=100&sort=check_in&sort_order=desc');
+    if (!ok || !data) { content.innerHTML = `<div class="empty-state"><div class="empty-state-title">Failed to load</div></div>`; return; }
+    const items = data.items || [];
+    content.innerHTML = `
       <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap">
         <label class="sr-only" for="admin-status-filter">Filter bookings by status</label>
         <select class="search-input" style="width:auto" id="admin-status-filter" aria-label="Filter bookings by status">
@@ -1179,31 +1502,31 @@ async function loadAdminTab(tab) {
       <div class="bookings-table-wrapper" id="admin-table-wrap">
         ${renderAdminTable(items)}
       </div>`;
-    document.getElementById('admin-status-filter')?.addEventListener('change',e=>{
-      const f=e.target.value;
-      document.getElementById('admin-table-wrap').innerHTML=renderAdminTable(f?items.filter(b=>b.status===f):items);
+    document.getElementById('admin-status-filter')?.addEventListener('change', e => {
+      const f = e.target.value;
+      document.getElementById('admin-table-wrap').innerHTML = renderAdminTable(f ? items.filter(b => b.status === f) : items);
     });
   }
 
-  if (tab==='checkin') {
-    const {ok,data}=await apiJSON('/bookings?limit=100');
-    if(!ok||!data){content.innerHTML=`<div class="empty-state"><div class="empty-state-title">Failed to load</div></div>`;return;}
-    const items=data.items||[];
-    const arrivals=items.filter(b=>b.status==='confirmed');
-    const inHouse=items.filter(b=>b.status==='checked_in');
-    content.innerHTML=`
+  if (tab === 'checkin') {
+    const { ok, data } = await apiJSON('/bookings?limit=100');
+    if (!ok || !data) { content.innerHTML = `<div class="empty-state"><div class="empty-state-title">Failed to load</div></div>`; return; }
+    const items = data.items || [];
+    const arrivals = items.filter(b => b.status === 'confirmed');
+    const inHouse = items.filter(b => b.status === 'checked_in');
+    content.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);">
         <div>
           <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)">
             <div style="width:10px;height:10px;border-radius:50%;background:#63b3ed"></div>
             <div class="heading-serif" style="font-size:1.1rem;color:var(--cream-50)">Upcoming Arrivals (${arrivals.length})</div>
           </div>
-          ${arrivals.length===0?`<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">✅</div><div class="empty-state-title">No pending arrivals</div></div>`:
-          arrivals.map(b=>`
+          ${arrivals.length === 0 ? `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">✅</div><div class="empty-state-title">No pending arrivals</div></div>` :
+        arrivals.map(b => `
             <div class="glass-card" style="margin-bottom:var(--space-3);padding:var(--space-4)">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--space-2)">
                 <div>
-                  <div style="font-weight:600;color:var(--cream-50)">${escHtml(b.guest_name||'Guest')}</div>
+                  <div style="font-weight:600;color:var(--cream-50)">${escHtml(b.guest_name || 'Guest')}</div>
                   <div class="text-xs text-muted">Room ${escHtml(b.room_number)} · ${escHtml(b.property_name)}</div>
                   <div class="text-xs text-muted">Check-in: <strong style="color:var(--gold-300)">${formatDate(b.check_in)}</strong></div>
                 </div>
@@ -1216,12 +1539,12 @@ async function loadAdminTab(tab) {
             <div style="width:10px;height:10px;border-radius:50%;background:#68d391"></div>
             <div class="heading-serif" style="font-size:1.1rem;color:var(--cream-50)">Currently In-House (${inHouse.length})</div>
           </div>
-          ${inHouse.length===0?`<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No active guests</div></div>`:
-          inHouse.map(b=>`
+          ${inHouse.length === 0 ? `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">🏨</div><div class="empty-state-title">No active guests</div></div>` :
+        inHouse.map(b => `
             <div class="glass-card" style="margin-bottom:var(--space-3);padding:var(--space-4)">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--space-2)">
                 <div>
-                  <div style="font-weight:600;color:var(--cream-50)">${escHtml(b.guest_name||'Guest')}</div>
+                  <div style="font-weight:600;color:var(--cream-50)">${escHtml(b.guest_name || 'Guest')}</div>
                   <div class="text-xs text-muted">Room ${escHtml(b.room_number)} · ${escHtml(b.property_name)}</div>
                   <div class="text-xs text-muted">Check-out: <strong style="color:var(--gold-300)">${formatDate(b.check_out)}</strong></div>
                 </div>
@@ -1232,10 +1555,10 @@ async function loadAdminTab(tab) {
       </div>`;
   }
 
-  if (tab==='reports' && Auth.isManager()) {
-    const today=todayStr();
-    const monthStart=today.slice(0,8)+'01';
-    content.innerHTML=`
+  if (tab === 'reports' && Auth.isManager()) {
+    const today = todayStr();
+    const monthStart = today.slice(0, 8) + '01';
+    content.innerHTML = `
       <div class="glass-card" style="margin-bottom:var(--space-6)">
         <div class="heading-serif" style="font-size:1.1rem;color:var(--cream-50);margin-bottom:var(--space-4)">Report Date Range</div>
         <div style="display:flex;gap:var(--space-4);align-items:flex-end;flex-wrap:wrap">
@@ -1253,19 +1576,75 @@ async function loadAdminTab(tab) {
       <div id="report-results"><div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">Click Run Reports</div></div></div>`;
     await runReports();
   }
+
+  if (tab === 'reviews') {
+    const { ok, data } = await apiJSON('/reviews/stats');
+    if (!ok || !data) { content.innerHTML = `<div class="empty-state"><div class="empty-state-title">Failed to load reviews</div></div>`; return; }
+    
+    const { ok: rOk, data: revData } = await apiJSON('/reviews?limit=100');
+    const allRevs = rOk && revData ? revData.reviews : [];
+
+    content.innerHTML = `
+      <div style="margin-bottom:var(--space-6);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-6);">
+          ${data.resorts.map(r => `
+            <div class="stat-card stat-card-gold" style="padding:var(--space-4);">
+              <div class="stat-card-label">${escHtml(r.property_name)} (${escHtml(r.city)})</div>
+              <div class="stat-card-value" style="font-size:1.8rem;color:var(--gold-200);">${r.average_rating.toFixed(1)} ★</div>
+              <div class="text-xs text-muted" style="margin-top:4px;">${r.total_reviews} verified reviews</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3);">
+          <h3 class="heading-serif" style="font-size:1.3rem;color:var(--cream-50);">All Guest Feedback (${allRevs.length})</h3>
+        </div>
+
+        <div class="reviews-grid" style="margin-top:0;">
+          ${allRevs.map(r => {
+            const initials = r.guest_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'G';
+            return `
+              <div class="review-card">
+                <div>
+                  <div class="review-card-header">
+                    <div class="review-guest-avatar">${initials}</div>
+                    <div style="flex-grow:1;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <strong style="color:var(--cream-50);">${escHtml(r.guest_name)}</strong>
+                        <span class="review-verified-tag">✦ Verified</span>
+                      </div>
+                      <div class="text-xs text-muted">${formatDate(r.review_date)} · Booking #${r.booking_id}</div>
+                      <div class="review-resort-tag">${escHtml(r.property_name)}</div>
+                    </div>
+                  </div>
+                  <div style="color:var(--gold-200);margin-bottom:var(--space-2);">${starsHTML(r.rating)} (${r.rating}/5)</div>
+                  <div class="review-comment-body">"${escHtml(r.comment || 'No comment provided.')}"</div>
+                </div>
+                <div class="review-card-footer">
+                  <span>Guest location: ${escHtml(r.guest_city || 'India')}</span>
+                  <span style="color:var(--gold-300);">${r.rating}★</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    return;
+  }
 }
 
 function renderAdminTable(items) {
-  if(!items||items.length===0) return `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">📋</div><div class="empty-state-title">No bookings found</div></div>`;
+  if (!items || items.length === 0) return `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">📋</div><div class="empty-state-title">No bookings found</div></div>`;
   return `
     <table class="bookings-table">
       <thead><tr><th>#</th><th>Guest</th><th>Property</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Total</th><th>Paid</th><th>Actions</th></tr></thead>
-      <tbody>${items.map(b=>`
+      <tbody>${items.map(b => `
         <tr>
           <td><span style="color:var(--gold-300);font-weight:600">#${b.booking_id}</span></td>
-          <td>${escHtml(b.guest_name||'—')}</td>
-          <td>${escHtml(b.property_name||'—')}</td>
-          <td>${escHtml(b.room_number||'—')}</td>
+          <td>${escHtml(b.guest_name || '—')}</td>
+          <td>${escHtml(b.property_name || '—')}</td>
+          <td>${escHtml(b.room_number || '—')}</td>
           <td>${formatDate(b.check_in)}</td>
           <td>${formatDate(b.check_out)}</td>
           <td>${statusBadge(b.status)}</td>
@@ -1273,8 +1652,8 @@ function renderAdminTable(items) {
           <td>${formatCurrency(b.amount_paid)}</td>
           <td><div style="display:flex;gap:6px">
             <button class="btn btn-ghost btn-sm" onclick="openBookingDetail(${b.booking_id})" title="View">👁</button>
-            ${b.status==='confirmed'?`<button class="btn btn-success btn-sm" onclick="adminCheckIn(${b.booking_id})" title="Check In">✓</button>`:''}
-            ${b.status==='checked_in'?`<button class="btn btn-outline btn-sm" onclick="adminCheckOut(${b.booking_id})" title="Check Out">↩</button>`:''}
+            ${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="adminCheckIn(${b.booking_id})" title="Check In">✓</button>` : ''}
+            ${b.status === 'checked_in' ? `<button class="btn btn-outline btn-sm" onclick="adminCheckOut(${b.booking_id})" title="Check Out">↩</button>` : ''}
           </div></td>
         </tr>`).join('')}
       </tbody>
@@ -1282,50 +1661,50 @@ function renderAdminTable(items) {
 }
 
 async function adminCheckIn(id) {
-  const {ok,error}=await apiJSON(`/bookings/${id}/check-in`,{method:'POST'});
-  if(!ok){showToast('Check-in failed',error,'error');return;}
-  showToast('Checked in! ✓',`Booking #${id} — guest is now checked in.`,'success');
+  const { ok, error } = await apiJSON(`/bookings/${id}/check-in`, { method: 'POST' });
+  if (!ok) { showToast('Check-in failed', error, 'error'); return; }
+  showToast('Checked in! ✓', `Booking #${id} — guest is now checked in.`, 'success');
   await Promise.all([loadAdminTab('checkin'), loadAdminStats()]);
 }
 async function adminCheckOut(id) {
-  const {ok,error}=await apiJSON(`/bookings/${id}/check-out`,{method:'POST'});
-  if(!ok){showToast('Check-out failed',error,'error');return;}
-  showToast('Checked out ✓',`Booking #${id} — guest has checked out.`,'success');
+  const { ok, error } = await apiJSON(`/bookings/${id}/check-out`, { method: 'POST' });
+  if (!ok) { showToast('Check-out failed', error, 'error'); return; }
+  showToast('Checked out ✓', `Booking #${id} — guest has checked out.`, 'success');
   await Promise.all([loadAdminTab('checkin'), loadAdminStats()]);
 }
 
 async function runReports() {
-  const start=document.getElementById('report-start')?.value;
-  const end=document.getElementById('report-end')?.value;
-  if(!start||!end){showToast('Select date range','','warning');return;}
-  const btn=document.getElementById('run-report-btn');
-  if(btn) setLoading(btn,true,'Running…');
-  const [occ,rev]=await Promise.all([
+  const start = document.getElementById('report-start')?.value;
+  const end = document.getElementById('report-end')?.value;
+  if (!start || !end) { showToast('Select date range', '', 'warning'); return; }
+  const btn = document.getElementById('run-report-btn');
+  if (btn) setLoading(btn, true, 'Running…');
+  const [occ, rev] = await Promise.all([
     apiJSON(`/reports/occupancy?start_date=${start}&end_date=${end}`),
     apiJSON(`/reports/revenue?start_date=${start}&end_date=${end}`)
   ]);
-  if(btn) setLoading(btn,false);
-  const area=document.getElementById('report-results'); if(!area) return;
-  area.innerHTML=`
+  if (btn) setLoading(btn, false);
+  const area = document.getElementById('report-results'); if (!area) return;
+  area.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)">
       <div>
         <div class="section-eyebrow" style="margin-bottom:var(--space-4)">Occupancy Report</div>
-        ${occ.ok&&occ.data?.length>0?occ.data.map(r=>`
+        ${occ.ok && occ.data?.length > 0 ? occ.data.map(r => `
           <div class="glass-card" style="margin-bottom:var(--space-3)">
             <div style="font-family:var(--font-display);font-size:1rem;color:var(--cream-50);margin-bottom:var(--space-3)">${escHtml(r.property_name)}</div>
             <div style="background:rgba(255,255,255,0.06);border-radius:var(--radius-md);overflow:hidden;margin-bottom:var(--space-3)">
-              <div style="height:8px;background:linear-gradient(90deg,var(--gold-300),var(--gold-500));width:${Math.min(100,r.occupancy_percentage)}%;transition:width 1s ease"></div>
+              <div style="height:8px;background:linear-gradient(90deg,var(--gold-300),var(--gold-500));width:${Math.min(100, r.occupancy_percentage)}%;transition:width 1s ease"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:0.85rem">
               <div><div class="text-muted" style="font-size:0.72rem">OCCUPANCY</div><div style="color:var(--gold-300);font-weight:700;font-size:1.3rem">${r.occupancy_percentage.toFixed(1)}%</div></div>
               <div><div class="text-muted" style="font-size:0.72rem">OCCUPIED NIGHTS</div><div style="color:var(--cream-50);font-weight:600">${r.occupied_room_nights} / ${r.available_room_nights}</div></div>
               <div><div class="text-muted" style="font-size:0.72rem">TOTAL ROOMS</div><div style="color:var(--cream-50);font-weight:600">${r.total_rooms}</div></div>
             </div>
-          </div>`).join(''):`<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">📊</div><div class="empty-state-title">${occ.error||'No data'}</div></div>`}
+          </div>`).join('') : `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">📊</div><div class="empty-state-title">${occ.error || 'No data'}</div></div>`}
       </div>
       <div>
         <div class="section-eyebrow" style="margin-bottom:var(--space-4)">Revenue Report</div>
-        ${rev.ok&&rev.data?.length>0?rev.data.map(r=>`
+        ${rev.ok && rev.data?.length > 0 ? rev.data.map(r => `
           <div class="glass-card" style="margin-bottom:var(--space-3)">
             <div style="font-family:var(--font-display);font-size:1rem;color:var(--cream-50);margin-bottom:var(--space-4)">${escHtml(r.property_name)}</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3)">
@@ -1342,7 +1721,7 @@ async function runReports() {
                 <div style="color:#63b3ed;font-family:var(--font-display);font-weight:700;font-size:1.1rem">${formatCurrency(r.revpar)}</div>
               </div>
             </div>
-          </div>`).join(''):`<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">💰</div><div class="empty-state-title">${rev.error||'No data'}</div></div>`}
+          </div>`).join('') : `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">💰</div><div class="empty-state-title">${rev.error || 'No data'}</div></div>`}
       </div>
     </div>`;
 }
@@ -1354,13 +1733,13 @@ registerPage('profile', async (container) => {
   if (!Auth.isLoggedIn()) { navigateTo('home'); return; }
   let user = Auth.user;
   if (!user || !user.name) {
-    const {ok, data} = await apiJSON('/auth/me');
+    const { ok, data } = await apiJSON('/auth/me');
     if (ok && data) {
       Auth.save({ access_token: Auth.token, refresh_token: Auth.refresh }, data);
       user = data;
     }
   }
-  container.innerHTML=`
+  container.innerHTML = `
     <div class="page"><div class="container" style="max-width:680px">
       <div style="margin-bottom:var(--space-8);padding-top:var(--space-4)">
         <div class="section-eyebrow">Account</div>
@@ -1368,11 +1747,11 @@ registerPage('profile', async (container) => {
       </div>
       <div class="glass-card">
         <div style="display:flex;align-items:center;gap:var(--space-5);margin-bottom:var(--space-6);padding-bottom:var(--space-6);border-bottom:1px solid rgba(255,255,255,0.07)">
-          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold-300),var(--gold-500));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:var(--charcoal-800)">${(user?.name||'G').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold-300),var(--gold-500));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:var(--charcoal-800)">${(user?.name || 'G').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
           <div>
-            <div class="heading-serif" style="font-size:1.4rem;color:var(--cream-50)">${escHtml(user?.name||'')}</div>
-            <div class="text-sm text-muted">${escHtml(user?.email||'')}</div>
-            <div style="margin-top:var(--space-2)"><span class="room-type-badge">${escHtml(user?.role||'guest')}</span></div>
+            <div class="heading-serif" style="font-size:1.4rem;color:var(--cream-50)">${escHtml(user?.name || '')}</div>
+            <div class="text-sm text-muted">${escHtml(user?.email || '')}</div>
+            <div style="margin-top:var(--space-2)"><span class="room-type-badge">${escHtml(user?.role || 'guest')}</span></div>
           </div>
         </div>
         <div class="booking-summary">
@@ -1380,11 +1759,11 @@ registerPage('profile', async (container) => {
           <div class="booking-summary-row"><span class="booking-summary-label">Name</span><span class="booking-summary-value">${escHtml(user?.name)}</span></div>
           <div class="booking-summary-row"><span class="booking-summary-label">Email</span><span class="booking-summary-value">${escHtml(user?.email)}</span></div>
           <div class="booking-summary-row"><span class="booking-summary-label">Role</span><span class="booking-summary-value">${escHtml(user?.role)}</span></div>
-          ${user?.property_id?`<div class="booking-summary-row"><span class="booking-summary-label">Property</span><span class="booking-summary-value">#${user.property_id}</span></div>`:''}
+          ${user?.property_id ? `<div class="booking-summary-row"><span class="booking-summary-label">Property</span><span class="booking-summary-value">#${user.property_id}</span></div>` : ''}
         </div>
         <div style="margin-top:var(--space-6);display:flex;gap:var(--space-3);flex-wrap:wrap">
           <button class="btn btn-outline" onclick="navigateTo('dashboard')">My Bookings</button>
-          ${Auth.isStaff()?`<button class="btn btn-secondary" onclick="navigateTo('admin')">Admin Panel</button>`:''}
+          ${Auth.isStaff() ? `<button class="btn btn-secondary" onclick="navigateTo('admin')">Admin Panel</button>` : ''}
           <button class="btn btn-danger" onclick="logoutUser()">Sign Out</button>
         </div>
       </div>
@@ -1394,17 +1773,17 @@ registerPage('profile', async (container) => {
 /* ─────────────────────────────────────────────────────────────────────────
    AUTH MODAL  (with Demo Quick-Fill)
    ───────────────────────────────────────────────────────────────────────── */
-function openAuthModal(tab='login') {
-  const overlay=document.getElementById('auth-modal-overlay');
+function openAuthModal(tab = 'login') {
+  const overlay = document.getElementById('auth-modal-overlay');
   overlay.classList.add('active');
   switchAuthTab(tab);
   injectDemoCredentials();
 }
 function closeAuthModal() { document.getElementById('auth-modal-overlay').classList.remove('active'); }
 function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
-  document.getElementById('login-form').classList.toggle('hidden',tab!=='login');
-  document.getElementById('register-form').classList.toggle('hidden',tab!=='register');
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
 }
 
 function injectDemoCredentials() {
@@ -1417,7 +1796,7 @@ function injectDemoCredentials() {
     <div style="background:rgba(212,137,31,0.08);border:1px solid rgba(212,137,31,0.2);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-5)">
       <div style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;color:var(--gold-400);margin-bottom:var(--space-3);text-transform:uppercase">⚡ Demo Accounts — Click to Autofill</div>
       <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)" id="demo-btns">
-        ${DEMO_ACCOUNTS.map((a,i)=>`
+        ${DEMO_ACCOUNTS.map((a, i) => `
           <button class="demo-cred-btn" data-idx="${i}" style="
             display:inline-flex;align-items:center;gap:6px;
             padding:4px 10px;border-radius:var(--radius-full);
@@ -1433,94 +1812,94 @@ function injectDemoCredentials() {
   const loginForm = document.getElementById('login-form');
   if (loginForm) loginForm.insertBefore(panel, loginForm.firstChild);
 
-  document.querySelectorAll('.demo-cred-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
+  document.querySelectorAll('.demo-cred-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
       const acc = DEMO_ACCOUNTS[parseInt(btn.dataset.idx)];
       document.getElementById('login-email').value = acc.email;
       document.getElementById('login-password').value = acc.password;
       switchAuthTab('login');
       // Flash effect
-      btn.style.background='rgba(212,137,31,0.25)';
-      btn.style.borderColor='var(--gold-400)';
-      setTimeout(()=>{btn.style.background='rgba(255,255,255,0.05)';btn.style.borderColor='rgba(255,255,255,0.1)';},600);
-      showToast('Credentials filled',`${acc.label} — click Sign In to continue.`,'info',2500);
+      btn.style.background = 'rgba(212,137,31,0.25)';
+      btn.style.borderColor = 'var(--gold-400)';
+      setTimeout(() => { btn.style.background = 'rgba(255,255,255,0.05)'; btn.style.borderColor = 'rgba(255,255,255,0.1)'; }, 600);
+      showToast('Credentials filled', `${acc.label} — click Sign In to continue.`, 'info', 2500);
     });
-    btn.addEventListener('mouseenter',()=>btn.style.background='rgba(255,255,255,0.1)');
-    btn.addEventListener('mouseleave',()=>btn.style.background='rgba(255,255,255,0.05)');
+    btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(255,255,255,0.1)');
+    btn.addEventListener('mouseleave', () => btn.style.background = 'rgba(255,255,255,0.05)');
   });
 }
 
 async function handleLogin(e) {
   e.preventDefault();
-  const btn=document.getElementById('login-btn');
-  const email=document.getElementById('login-email').value.trim();
-  const password=document.getElementById('login-password').value;
-  if(!email||!password){showToast('Fill all fields','','warning');return;}
-  setLoading(btn,true,'Signing in…');
-  const {ok,data,error}=await apiJSON('/auth/login',{method:'POST',body:JSON.stringify({email,password})});
-  setLoading(btn,false);
-  if(!ok){showToast('Login failed',error,'error');return;}
+  const btn = document.getElementById('login-btn');
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showToast('Fill all fields', '', 'warning'); return; }
+  setLoading(btn, true, 'Signing in…');
+  const { ok, data, error } = await apiJSON('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+  setLoading(btn, false);
+  if (!ok) { showToast('Login failed', error, 'error'); return; }
   Auth.save(data, null);
   closeAuthModal();
   updateNavForAuthState();
-  const role=Auth.user?.role;
-  showToast(`Welcome back, ${Auth.user?.name?.split(' ')[0]||'Guest'}!`,`Logged in as ${role}.`,'success');
-  const pending=sessionStorage.getItem('pending_booking');
-  if(pending){
+  const role = Auth.user?.role;
+  showToast(`Welcome back, ${Auth.user?.name?.split(' ')[0] || 'Guest'}!`, `Logged in as ${role}.`, 'success');
+  const pending = sessionStorage.getItem('pending_booking');
+  if (pending) {
     sessionStorage.removeItem('pending_booking');
-    const b=JSON.parse(pending);
+    const b = JSON.parse(pending);
     // Use stored roomData directly — no DOM scraping needed
-    openBookingModal(b.roomId,b.checkIn,b.checkOut,b.guests,b.roomData||null);
+    openBookingModal(b.roomId, b.checkIn, b.checkOut, b.guests, b.roomData || null);
     return;
   }
   // Role-based redirect
-  if(Auth.isStaff()) navigateTo('admin');
+  if (Auth.isStaff()) navigateTo('admin');
   else navigateTo('dashboard');
 }
 
 async function handleRegister(e) {
   e.preventDefault();
-  const btn=document.getElementById('register-btn');
-  const name=document.getElementById('reg-name').value.trim();
-  const email=document.getElementById('reg-email').value.trim();
-  const password=document.getElementById('reg-password').value;
-  const phone=document.getElementById('reg-phone').value.trim();
-  const city=document.getElementById('reg-city').value.trim();
-  if(!name||!email||!password){showToast('Fill required fields','','warning');return;}
-  if(password.length<8){showToast('Weak password','Min 8 characters.','warning');return;}
-  setLoading(btn,true,'Creating…');
-  const {ok,error}=await apiJSON('/auth/register',{method:'POST',body:JSON.stringify({name,email,password,phone:phone||null,city:city||null})});
-  setLoading(btn,false);
-  if(!ok){showToast('Registration failed',error,'error');return;}
-  showToast('Account created!','Log in with your credentials.','success');
+  const btn = document.getElementById('register-btn');
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const phone = document.getElementById('reg-phone').value.trim();
+  const city = document.getElementById('reg-city').value.trim();
+  if (!name || !email || !password) { showToast('Fill required fields', '', 'warning'); return; }
+  if (password.length < 8) { showToast('Weak password', 'Min 8 characters.', 'warning'); return; }
+  setLoading(btn, true, 'Creating…');
+  const { ok, error } = await apiJSON('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, phone: phone || null, city: city || null }) });
+  setLoading(btn, false);
+  if (!ok) { showToast('Registration failed', error, 'error'); return; }
+  showToast('Account created!', 'Log in with your credentials.', 'success');
   switchAuthTab('login');
-  document.getElementById('login-email').value=email;
+  document.getElementById('login-email').value = email;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
    BOOKING MODAL
    ───────────────────────────────────────────────────────────────────────── */
-let activeBookingData=null;
-function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
-  const nights=Math.max(1, nightsBetween(checkIn,checkOut));
+let activeBookingData = null;
+function openBookingModal(roomId, checkIn, checkOut, guests, roomData) {
+  const nights = Math.max(1, nightsBetween(checkIn, checkOut));
   roomData = roomData || roomsCache[roomId];
   // If roomData not provided, try to scrape from DOM
-  if(!roomData){
+  if (!roomData) {
     const card = document.getElementById(`room-card-${roomId}`) ||
-                 document.querySelector(`[data-room-id="${roomId}"]`);
-    if(card){
-      roomData={
-        room_id:roomId,
-        room_number:card.querySelector('.room-number')?.textContent.replace('Room ','').trim()||String(roomId),
-        type_name:card.querySelector('.room-card-name')?.textContent.replace(' Suite','').trim()||'Deluxe',
-        total_rate:parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g,'')||0),
-        nightly_rate:parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g,'')||0),
-        max_occupancy:parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g,'')||4),
+      document.querySelector(`[data-room-id="${roomId}"]`);
+    if (card) {
+      roomData = {
+        room_id: roomId,
+        room_number: card.querySelector('.room-number')?.textContent.replace('Room ', '').trim() || String(roomId),
+        type_name: card.querySelector('.room-card-name')?.textContent.replace(' Suite', '').trim() || 'Deluxe',
+        total_rate: parseFloat(card.querySelector('.room-total-rate')?.textContent.replace(/[^0-9.]/g, '') || 0),
+        nightly_rate: parseFloat(card.querySelector('.room-nightly-rate')?.textContent.split('/')[0].replace(/[^0-9.]/g, '') || 0),
+        max_occupancy: parseInt(card.querySelector('.room-meta-item')?.textContent.replace(/\D/g, '') || 4),
       };
       roomsCache[roomId] = roomData;
     }
   }
-  if(!roomData){
+  if (!roomData) {
     roomData = {
       room_id: roomId,
       room_number: String(roomId),
@@ -1532,31 +1911,31 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
     };
     roomsCache[roomId] = roomData;
   }
-  
+
   const totalAmount = (roomData.nightly_rate || 4000) * nights;
   const depositAmount = Math.round(totalAmount * 0.20);
   const remainingBalance = totalAmount - depositAmount;
-  
-  activeBookingData={roomId,checkIn,checkOut,guests,roomData,nights,totalAmount,depositAmount,remainingBalance};
-  
+
+  activeBookingData = { roomId, checkIn, checkOut, guests, roomData, nights, totalAmount, depositAmount, remainingBalance };
+
   let propName = roomData.property_name || 'Kaveri Stays';
   const searchSel = document.getElementById('search-property') || document.getElementById('vac-property');
-  if(searchSel && searchSel.value && searchSel.value !== "") {
-    propName = propertiesCache?.find(p=>p.property_id==parseInt(searchSel.value))?.name || propName;
+  if (searchSel && searchSel.value && searchSel.value !== "") {
+    propName = propertiesCache?.find(p => p.property_id == parseInt(searchSel.value))?.name || propName;
   }
   const maxOcc = roomData.max_occupancy || 6;
-  
-  document.getElementById('booking-modal-body').innerHTML=`
+
+  document.getElementById('booking-modal-body').innerHTML = `
     <div style="margin-bottom:var(--space-4)">
       <div class="text-xs text-muted" style="letter-spacing:0.05em">ROOM SELECTION</div>
       <div class="heading-serif" style="font-size:1.2rem;color:var(--cream-50)">${escHtml(roomData.type_name)} Suite · Room ${escHtml(roomData.room_number)}</div>
-      <div class="text-sm text-muted">${escHtml(propName)} · ${formatDate(checkIn)} → ${formatDate(checkOut)} (${nights} night${nights>1?'s':''})</div>
+      <div class="text-sm text-muted">${escHtml(propName)} · ${formatDate(checkIn)} → ${formatDate(checkOut)} (${nights} night${nights > 1 ? 's' : ''})</div>
     </div>
 
     <!-- 20% Deposit Breakdown Card (Screenshot 2 Match) -->
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);">
       <div class="booking-summary-row" style="margin-bottom:var(--space-2);">
-        <span style="color:var(--cream-100);font-size:0.95rem;">${formatCurrency(roomData.nightly_rate)} × ${nights} night${nights>1?'s':''}</span>
+        <span style="color:var(--cream-100);font-size:0.95rem;">${formatCurrency(roomData.nightly_rate)} × ${nights} night${nights > 1 ? 's' : ''}</span>
         <span style="color:var(--cream-50);font-weight:600;font-size:0.95rem;">${formatCurrency(totalAmount)}</span>
       </div>
       <div class="booking-summary-row" style="margin-bottom:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);">
@@ -1571,14 +1950,14 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
 
     <div class="form-group" style="margin-bottom:var(--space-3);">
       <label class="form-label" for="booking-guest-count">Guests <span class="required">*</span></label>
-      <select class="form-input" id="booking-guest-count" aria-label="Number of Guests">${Array.from({length:maxOcc},(_,i)=>i+1).map(n=>`<option value="${n}" ${n==Math.min(guests,maxOcc)?'selected':''}>${n} Guest${n>1?'s':''}</option>`).join('')}</select>
+      <select class="form-input" id="booking-guest-count" aria-label="Number of Guests">${Array.from({ length: maxOcc }, (_, i) => i + 1).map(n => `<option value="${n}" ${n == Math.min(guests, maxOcc) ? 'selected' : ''}>${n} Guest${n > 1 ? 's' : ''}</option>`).join('')}</select>
     </div>
 
     <div class="form-group" style="margin-bottom:var(--space-4);">
       <label class="form-label">Payment Method <span class="required">*</span></label>
       <div class="payment-methods">
-        ${[{value:'card',icon:'💳',label:'Card'},{value:'upi',icon:'📱',label:'UPI'},{value:'cash',icon:'💵',label:'Cash'},{value:'bank_transfer',icon:'🏦',label:'Bank'}].map(m=>`
-          <div class="payment-method-option"><input type="radio" name="payment-method" id="pm-${m.value}" value="${m.value}" ${m.value==='card'?'checked':''}>
+        ${[{ value: 'card', icon: '💳', label: 'Card' }, { value: 'upi', icon: '📱', label: 'UPI' }, { value: 'cash', icon: '💵', label: 'Cash' }, { value: 'bank_transfer', icon: '🏦', label: 'Bank' }].map(m => `
+          <div class="payment-method-option"><input type="radio" name="payment-method" id="pm-${m.value}" value="${m.value}" ${m.value === 'card' ? 'checked' : ''}>
           <label class="payment-method-label" for="pm-${m.value}"><span class="payment-method-icon">${m.icon}</span>${m.label}</label></div>`).join('')}
       </div>
     </div>
@@ -1598,16 +1977,16 @@ function openBookingModal(roomId,checkIn,checkOut,guests,roomData) {
 
   document.getElementById('booking-modal-overlay').classList.add('active');
 }
-function closeBookingModal() { document.getElementById('booking-modal-overlay').classList.remove('active'); activeBookingData=null; }
+function closeBookingModal() { document.getElementById('booking-modal-overlay').classList.remove('active'); activeBookingData = null; }
 
 async function confirmBooking() {
-  if(!activeBookingData) return;
+  if (!activeBookingData) return;
   const snapshot = activeBookingData; // Keep reference before closing modal
   const btn = document.getElementById('confirm-booking-modal-btn') || document.getElementById('confirm-booking-btn');
-  const {roomId, checkIn, checkOut, roomData, nights} = snapshot;
+  const { roomId, checkIn, checkOut, roomData, nights } = snapshot;
   const guestCount = parseInt(document.getElementById('booking-guest-count')?.value || '1');
   const method = document.querySelector('input[name="payment-method"]:checked')?.value || 'card';
-  
+
   if (!Auth.isLoggedIn()) {
     sessionStorage.setItem('pending_booking', JSON.stringify({
       roomId, checkIn, checkOut, guests: guestCount, roomData, nights
@@ -1620,13 +1999,13 @@ async function confirmBooking() {
 
   // Validate guest count against room capacity
   const maxOcc = roomData?.max_occupancy || 99;
-  if(guestCount > maxOcc){
-    showToast('Too many guests', `This room type allows a maximum of ${maxOcc} guest${maxOcc>1?'s':''}.`, 'error');
+  if (guestCount > maxOcc) {
+    showToast('Too many guests', `This room type allows a maximum of ${maxOcc} guest${maxOcc > 1 ? 's' : ''}.`, 'error');
     return;
   }
-  
-  if(btn) setLoading(btn, true, 'Securing Stay…');
-  const {ok, data, error} = await apiJSON('/bookings', {
+
+  if (btn) setLoading(btn, true, 'Securing Stay…');
+  const { ok, data, error } = await apiJSON('/bookings', {
     method: 'POST',
     body: JSON.stringify({
       room_id: roomId,
@@ -1636,9 +2015,9 @@ async function confirmBooking() {
       payment_method: method
     })
   });
-  if(btn) setLoading(btn, false);
-  
-  if(!ok){
+  if (btn) setLoading(btn, false);
+
+  if (!ok) {
     if (error === 'Session expired' || error?.includes('401') || error?.includes('credentials') || error?.includes('Unauthorized')) {
       sessionStorage.setItem('pending_booking', JSON.stringify({
         roomId, checkIn, checkOut, guests: guestCount, roomData, nights
@@ -1651,22 +2030,22 @@ async function confirmBooking() {
     showToast('Booking failed', error, 'error');
     return;
   }
-  
+
   closeBookingModal();
   showBookingSuccess(data, nights, '20% Deposit Paid');
   showToast('Booking confirmed! 🎉', `Booking #${data.booking_id} created.`, 'success');
 }
 
-function showBookingSuccess(booking, nights=null, paymentLabel=null) {
+function showBookingSuccess(booking, nights = null, paymentLabel = null) {
   if (!booking) return;
   const n = nights || (booking.check_in && booking.check_out ? Math.max(1, nightsBetween(booking.check_in, booking.check_out)) : 1);
   const paid = booking.amount_paid || Math.round((booking.total_amount || 0) * 0.20);
   const label = paymentLabel || '20% Deposit Paid';
-  
+
   const successModal = document.getElementById('success-modal-overlay');
   const successBody = document.getElementById('success-modal-body');
   if (!successModal || !successBody) return;
-  
+
   successBody.innerHTML = `
     <div style="text-align:center;padding:var(--space-2) 0 var(--space-4);">
       <div style="width:56px;height:56px;border-radius:50%;background:rgba(72,187,120,0.15);border:2px solid #48bb78;color:#48bb78;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto var(--space-3);">✓</div>
@@ -1676,7 +2055,7 @@ function showBookingSuccess(booking, nights=null, paymentLabel=null) {
       
       <!-- Summary Box (Exact Screenshot Match) -->
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-lg);padding:var(--space-4);text-align:left;margin-bottom:var(--space-6);">
-        <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">${n} Night${n>1?'s':''}</span></div>
+        <div class="booking-summary-row"><span class="booking-summary-label">Duration</span><span class="booking-summary-value">${n} Night${n > 1 ? 's' : ''}</span></div>
         <div class="booking-summary-row" style="margin-top:var(--space-2);"><span class="booking-summary-label">Total Stay Cost</span><span class="booking-summary-value" style="color:var(--cream-50);font-weight:700;">${formatCurrency(booking.total_amount)}</span></div>
         <div class="booking-summary-row" style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px dashed rgba(255,255,255,0.1);"><span style="color:#68d391;font-weight:700;">${label}</span><span style="color:#68d391;font-weight:800;font-size:1.15rem;">${formatCurrency(paid)}</span></div>
       </div>
@@ -1686,20 +2065,20 @@ function showBookingSuccess(booking, nights=null, paymentLabel=null) {
         <button class="btn btn-outline w-full" style="padding:12px;border-radius:var(--radius-full);font-size:0.9rem;" onclick="closeSuccessModal();navigateTo('home')">Return to Homepage</button>
       </div>
     </div>`;
-    
+
   successModal.classList.add('active');
 }
 function closeSuccessModal() { document.getElementById('success-modal-overlay')?.classList.remove('active'); }
 
 /* ─── Booking Detail Modal ─────────────────────────────────────────────── */
 async function openBookingDetail(id) {
-  document.getElementById('detail-modal-body').innerHTML=`<div class="flex justify-center" style="padding:var(--space-8)"><div class="spinner spinner-lg"></div></div>`;
+  document.getElementById('detail-modal-body').innerHTML = `<div class="flex justify-center" style="padding:var(--space-8)"><div class="spinner spinner-lg"></div></div>`;
   document.getElementById('detail-modal-overlay').classList.add('active');
-  const {ok,data,error}=await apiJSON(`/bookings/${id}`);
-  if(!ok){document.getElementById('detail-modal-body').innerHTML=`<div class="empty-state"><div class="empty-state-title">${escHtml(error)}</div></div>`;return;}
-  const {ok:ok2,data:payments}=await apiJSON(`/bookings/${id}/payments`);
-  const plist=ok2&&payments?payments:[];
-  document.getElementById('detail-modal-body').innerHTML=`
+  const { ok, data, error } = await apiJSON(`/bookings/${id}`);
+  if (!ok) { document.getElementById('detail-modal-body').innerHTML = `<div class="empty-state"><div class="empty-state-title">${escHtml(error)}</div></div>`; return; }
+  const { ok: ok2, data: payments } = await apiJSON(`/bookings/${id}/payments`);
+  const plist = ok2 && payments ? payments : [];
+  document.getElementById('detail-modal-body').innerHTML = `
     <div class="booking-summary">
       <div class="booking-summary-row"><span class="booking-summary-label">Booking ID</span><span class="booking-summary-value">#${data.booking_id}</span></div>
       <div class="booking-summary-row"><span class="booking-summary-label">Property</span><span class="booking-summary-value">${escHtml(data.property_name)}</span></div>
@@ -1711,13 +2090,13 @@ async function openBookingDetail(id) {
       <div class="booking-summary-row"><span class="booking-summary-label">Status</span><span class="booking-summary-value">${statusBadge(data.status)}</span></div>
       <div class="booking-summary-total"><div class="booking-summary-total-label">Total</div><div class="booking-summary-total-amount">${formatCurrency(data.total_amount)}</div></div>
     </div>
-    ${plist.length>0?`
+    ${plist.length > 0 ? `
     <div style="margin-top:var(--space-5)">
       <div class="section-eyebrow" style="margin-bottom:var(--space-3)">Payment History</div>
-      ${plist.map(p=>`<div class="booking-summary-row" style="border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-2)"><span class="booking-summary-label">${formatDate(p.payment_date)} · ${escHtml(p.method)}</span><span class="booking-summary-value" style="color:var(--gold-300)">${formatCurrency(p.amount)}</span></div>`).join('')}
+      ${plist.map(p => `<div class="booking-summary-row" style="border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-2)"><span class="booking-summary-label">${formatDate(p.payment_date)} · ${escHtml(p.method)}</span><span class="booking-summary-value" style="color:var(--gold-300)">${formatCurrency(p.amount)}</span></div>`).join('')}
       <div style="text-align:right;margin-top:var(--space-3);font-size:0.875rem;color:var(--charcoal-300)">Paid: <strong style="color:var(--cream-50)">${formatCurrency(data.amount_paid)}</strong> of ${formatCurrency(data.total_amount)}</div>
-    </div>`:''}
-    ${(data.status==='confirmed'||data.status==='checked_in')?`
+    </div>`: ''}
+    ${(data.status === 'confirmed' || data.status === 'checked_in') ? `
     <div style="margin-top:var(--space-5)">
       <div class="section-eyebrow" style="margin-bottom:var(--space-3)">Add Payment</div>
       <div style="display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap">
@@ -1725,66 +2104,72 @@ async function openBookingDetail(id) {
         <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0"><label class="form-label" for="payment-method-input">Method</label><select class="form-input" id="payment-method-input" aria-label="Payment Method"><option value="card">Card</option><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option></select></div>
         <button class="btn btn-primary" onclick="addPayment(${data.booking_id})">Pay Now</button>
       </div>
-    </div>`:''}`;
+    </div>`: ''}`;
 }
 
 async function addPayment(id) {
-  const amount=parseFloat(document.getElementById('payment-amount-input').value);
-  const method=document.getElementById('payment-method-input').value;
-  if(!amount||amount<=0){showToast('Invalid amount','','warning');return;}
-  const {ok,error}=await apiJSON(`/bookings/${id}/payments`,{method:'POST',body:JSON.stringify({amount,method})});
-  if(!ok){showToast('Payment failed',error,'error');return;}
-  showToast('Payment recorded! ✓',`${formatCurrency(amount)} recorded.`,'success');
+  const amount = parseFloat(document.getElementById('payment-amount-input').value);
+  const method = document.getElementById('payment-method-input').value;
+  if (!amount || amount <= 0) { showToast('Invalid amount', '', 'warning'); return; }
+  const { ok, error } = await apiJSON(`/bookings/${id}/payments`, { method: 'POST', body: JSON.stringify({ amount, method }) });
+  if (!ok) { showToast('Payment failed', error, 'error'); return; }
+  showToast('Payment recorded! ✓', `${formatCurrency(amount)} recorded.`, 'success');
   closeDetailModal();
-  
+
   // Open the secured stay confirmation display
-  const {ok: bok, data: updatedBooking} = await apiJSON(`/bookings/${id}`);
+  const { ok: bok, data: updatedBooking } = await apiJSON(`/bookings/${id}`);
   if (bok && updatedBooking) {
     showBookingSuccess(updatedBooking, null, 'Payment Received');
   }
 
-  if(currentPage==='dashboard') await loadDashboard();
-  if(currentPage==='admin') await loadAdminStats();
+  if (currentPage === 'dashboard') await loadDashboard();
+  if (currentPage === 'admin') await loadAdminStats();
 }
 function closeDetailModal() { document.getElementById('detail-modal-overlay').classList.remove('active'); }
 
 /* ─── Review Modal ─────────────────────────────────────────────────────── */
-let reviewBookingId=null, reviewRating=0;
+let reviewBookingId = null, reviewRating = 0;
 function openReviewModal(id) {
-  reviewBookingId=id; reviewRating=0;
-  const stars=document.querySelectorAll('.star-btn');
-  stars.forEach(b=>{b.textContent='☆';b.classList.remove('filled','hovered');});
+  reviewBookingId = id; reviewRating = 0;
+  const stars = document.querySelectorAll('.star-btn');
+  stars.forEach(b => { b.textContent = '☆'; b.classList.remove('filled', 'hovered'); });
   // Add hover cascade to stars
-  stars.forEach((b,i)=>{
-    b.addEventListener('mouseenter',()=>stars.forEach((s,j)=>s.classList.toggle('hovered',j<=i)));
-    b.addEventListener('mouseleave',()=>stars.forEach(s=>s.classList.remove('hovered')));
+  stars.forEach((b, i) => {
+    b.addEventListener('mouseenter', () => stars.forEach((s, j) => s.classList.toggle('hovered', j <= i)));
+    b.addEventListener('mouseleave', () => stars.forEach(s => s.classList.remove('hovered')));
   });
-  document.getElementById('review-comment').value='';
+  document.getElementById('review-comment').value = '';
   document.getElementById('review-modal-overlay').classList.add('active');
 }
-function setRating(n) { reviewRating=n; document.querySelectorAll('.star-btn').forEach((b,i)=>{b.textContent=i<n?'★':'☆';b.classList.toggle('filled',i<n);}); }
-function closeReviewModal() { document.getElementById('review-modal-overlay').classList.remove('active'); reviewBookingId=null; reviewRating=0; }
+function setRating(n) { reviewRating = n; document.querySelectorAll('.star-btn').forEach((b, i) => { b.textContent = i < n ? '★' : '☆'; b.classList.toggle('filled', i < n); }); }
+function closeReviewModal() { document.getElementById('review-modal-overlay').classList.remove('active'); reviewBookingId = null; reviewRating = 0; }
 async function submitReview() {
-  if(!reviewBookingId) return;
-  if(!reviewRating){showToast('Select a rating','','warning');return;}
-  const btn=document.getElementById('submit-review-btn');
-  const comment=document.getElementById('review-comment').value.trim();
-  setLoading(btn,true,'Submitting…');
-  const {ok,error}=await apiJSON(`/bookings/${reviewBookingId}/review`,{method:'POST',body:JSON.stringify({rating:reviewRating,comment:comment||null})});
-  setLoading(btn,false);
-  if(!ok){showToast('Review failed',error,'error');return;}
-  showToast('Review submitted! ⭐','Thank you for your feedback.','success');
+  if (!reviewBookingId) return;
+  if (!reviewRating) { showToast('Select a rating', '', 'warning'); return; }
+  const btn = document.getElementById('submit-review-btn');
+  const comment = document.getElementById('review-comment').value.trim();
+  setLoading(btn, true, 'Submitting…');
+  const { ok, error } = await apiJSON(`/bookings/${reviewBookingId}/review`, { method: 'POST', body: JSON.stringify({ rating: reviewRating, comment: comment || null }) });
+  setLoading(btn, false);
+  if (!ok) { showToast('Review failed', error, 'error'); return; }
+  showToast('Review submitted! ⭐', 'Thank you for your feedback.', 'success');
   closeReviewModal();
+  if (currentPage === 'dashboard') await loadDashboard();
+  if (currentPage === 'reviews') {
+    const curP = document.querySelector('.resort-pill-btn.active')?.dataset?.prop;
+    navigateTo('reviews', { property_id: curP && curP !== 'all' ? curP : null });
+  }
+  await loadProperties();
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
    LOGOUT
    ───────────────────────────────────────────────────────────────────────── */
 async function logoutUser() {
-  const refresh=Auth.refresh;
-  if(refresh) await apiJSON('/auth/logout',{method:'POST',body:JSON.stringify({refresh_token:refresh})});
+  const refresh = Auth.refresh;
+  if (refresh) await apiJSON('/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: refresh }) });
   Auth.clear(); updateNavForAuthState(); navigateTo('home');
-  showToast('Signed out','You have been signed out.','info');
+  showToast('Signed out', 'You have been signed out.', 'info');
 }
 
 /* ─── Info & Experience Modals ─────────────────────────────────────────── */
@@ -1942,74 +2327,74 @@ function initApp() {
   });
 
   // Navbar scroll
-  const navbar=document.getElementById('main-navbar');
-  window.addEventListener('scroll',()=>navbar?.classList.toggle('scrolled',window.scrollY>60),{passive:true});
+  const navbar = document.getElementById('main-navbar');
+  window.addEventListener('scroll', () => navbar?.classList.toggle('scrolled', window.scrollY > 60), { passive: true });
 
   // Nav routing
-  document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>{
+  document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => {
     navigateTo(el.dataset.nav);
     closeMobileNav();
   }));
 
   // Auth modal
-  document.getElementById('open-login-btn')?.addEventListener('click',()=>openAuthModal('login'));
-  document.getElementById('open-register-btn')?.addEventListener('click',()=>openAuthModal('register'));
-  document.getElementById('auth-modal-close')?.addEventListener('click',closeAuthModal);
-  document.getElementById('auth-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeAuthModal();});
-  document.querySelectorAll('.auth-tab').forEach(t=>t.addEventListener('click',()=>switchAuthTab(t.dataset.tab)));
-  document.getElementById('login-form')?.addEventListener('submit',handleLogin);
-  document.getElementById('register-form')?.addEventListener('submit',handleRegister);
+  document.getElementById('open-login-btn')?.addEventListener('click', () => openAuthModal('login'));
+  document.getElementById('open-register-btn')?.addEventListener('click', () => openAuthModal('register'));
+  document.getElementById('auth-modal-close')?.addEventListener('click', closeAuthModal);
+  document.getElementById('auth-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeAuthModal(); });
+  document.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => switchAuthTab(t.dataset.tab)));
+  document.getElementById('login-form')?.addEventListener('submit', handleLogin);
+  document.getElementById('register-form')?.addEventListener('submit', handleRegister);
 
   // Booking modals
-  document.getElementById('booking-modal-close')?.addEventListener('click',closeBookingModal);
-  document.getElementById('booking-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeBookingModal();});
-  document.getElementById('confirm-booking-btn')?.addEventListener('click',confirmBooking);
-  document.getElementById('cancel-booking-modal-btn')?.addEventListener('click',closeBookingModal);
-  document.getElementById('success-modal-close')?.addEventListener('click',closeSuccessModal);
-  document.getElementById('success-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeSuccessModal();});
-  document.getElementById('detail-modal-close')?.addEventListener('click',closeDetailModal);
-  document.getElementById('detail-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeDetailModal();});
+  document.getElementById('booking-modal-close')?.addEventListener('click', closeBookingModal);
+  document.getElementById('booking-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeBookingModal(); });
+  document.getElementById('confirm-booking-btn')?.addEventListener('click', confirmBooking);
+  document.getElementById('cancel-booking-modal-btn')?.addEventListener('click', closeBookingModal);
+  document.getElementById('success-modal-close')?.addEventListener('click', closeSuccessModal);
+  document.getElementById('success-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeSuccessModal(); });
+  document.getElementById('detail-modal-close')?.addEventListener('click', closeDetailModal);
+  document.getElementById('detail-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
 
   // Property modal overlay click
-  document.getElementById('property-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closePropertyModal();});
+  document.getElementById('property-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePropertyModal(); });
 
   // Info modal overlay click
-  document.getElementById('info-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeInfoModal();});
+  document.getElementById('info-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeInfoModal(); });
 
   // Cancel modal overlay click
-  document.getElementById('cancel-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeCancelModal();});
+  document.getElementById('cancel-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeCancelModal(); });
 
   // Review modal
-  document.getElementById('review-modal-close')?.addEventListener('click',closeReviewModal);
-  document.getElementById('review-modal-overlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeReviewModal();});
-  document.getElementById('submit-review-btn')?.addEventListener('click',submitReview);
-  document.getElementById('cancel-review-btn')?.addEventListener('click',closeReviewModal);
+  document.getElementById('review-modal-close')?.addEventListener('click', closeReviewModal);
+  document.getElementById('review-modal-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeReviewModal(); });
+  document.getElementById('submit-review-btn')?.addEventListener('click', submitReview);
+  document.getElementById('cancel-review-btn')?.addEventListener('click', closeReviewModal);
 
   // User menu & Dropdown
-  document.getElementById('nav-user-btn')?.addEventListener('click',(e)=>{
+  document.getElementById('nav-user-btn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleUserDropdown();
   });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#nav-user')) closeUserDropdown();
   });
-  document.getElementById('nav-logout-btn')?.addEventListener('click',logoutUser);
+  document.getElementById('nav-logout-btn')?.addEventListener('click', logoutUser);
 
   // Focus-based autofill hint on login fields
-  ['login-email','login-password'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('focus',()=>{
-      const overlay=document.getElementById('auth-modal-overlay');
-      if(overlay?.classList.contains('active')) injectDemoCredentials();
+  ['login-email', 'login-password'].forEach(id => {
+    document.getElementById(id)?.addEventListener('focus', () => {
+      const overlay = document.getElementById('auth-modal-overlay');
+      if (overlay?.classList.contains('active')) injectDemoCredentials();
     });
   });
 
   // Mobile hamburger
   const hamburger = document.getElementById('hamburger-btn');
-  const navLinks  = document.getElementById('main-nav-links');
-  function openMobileNav()  { navLinks?.classList.add('mobile-open'); hamburger?.classList.add('open'); hamburger?.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
-  function closeMobileNav() { navLinks?.classList.remove('mobile-open'); hamburger?.classList.remove('open'); hamburger?.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+  const navLinks = document.getElementById('main-nav-links');
+  function openMobileNav() { navLinks?.classList.add('mobile-open'); hamburger?.classList.add('open'); hamburger?.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; }
+  function closeMobileNav() { navLinks?.classList.remove('mobile-open'); hamburger?.classList.remove('open'); hamburger?.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; }
   hamburger?.addEventListener('click', () => navLinks?.classList.contains('mobile-open') ? closeMobileNav() : openMobileNav());
-  document.addEventListener('keydown', e => { if(e.key==='Escape') closeMobileNav(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileNav(); });
 
   initRocketCursor();
   updateNavForAuthState();

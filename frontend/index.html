@@ -48,6 +48,7 @@
       <ul class="nav-links" id="main-nav-links">
         <li><button class="nav-link" data-nav="home">Home</button></li>
         <li><button class="nav-link" id="nav-properties-link">Properties</button></li>
+        <li><button class="nav-link" data-nav="reviews">Reviews ⭐</button></li>
         <li><button class="nav-link" data-nav="vacancies">Vacancies</button></li>
         <li><button class="nav-link" data-nav="dashboard">My Bookings</button></li>
         <li><button class="nav-link hidden" data-nav="admin" id="nav-admin-link">Admin ⚙</button></li>
@@ -70,6 +71,7 @@
             </div>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" onclick="navigateTo('profile');closeUserDropdown();">👤 My Profile</button>
+            <button class="dropdown-item" onclick="navigateTo('reviews');closeUserDropdown();">⭐ Guest Reviews</button>
             <button class="dropdown-item" onclick="navigateTo('dashboard');closeUserDropdown();">📋 My Bookings</button>
             <button class="dropdown-item" onclick="navigateTo('vacancies');closeUserDropdown();">🏨 Vacancies</button>
             <button class="dropdown-item hidden" id="dropdown-admin-btn" onclick="navigateTo('admin');closeUserDropdown();">⚙️ Admin Panel</button>
@@ -142,8 +144,9 @@
           </div>
         </div>
         <div>
-          <div class="footer-heading">Support</div>
+          <div class="footer-heading">Support & Feedback</div>
           <div class="footer-links">
+            <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('reviews')">Guest Reviews ⭐</span>
             <span class="footer-link" style="cursor:pointer;" onclick="navigateTo('dashboard')">My Bookings</span>
             <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('cancellation')">Cancellation Policy</span>
             <span class="footer-link" style="cursor:pointer;" onclick="openInfoModal('contact')">Contact Us</span>
